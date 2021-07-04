@@ -17,6 +17,16 @@ module Rensei
         end
       end
 
+      refine Array do
+        def type
+          self[0]
+        end
+
+        def children
+          self[1]
+        end
+      end
+
       refine String do
         def bracket(prefix = "(", suffix = ")")
           "#{prefix}#{self}#{suffix}"
@@ -30,9 +40,13 @@ module Rensei
 
     module Base
       def unparse(node, opt = {})
-        return node unless RubyVM::AbstractSyntaxTree::Node === node || Hash === node
-        method_name = "NODE_#{node.type}"
-        respond_to?(method_name, true) ? send(method_name, node, opt.dup) : node
+        case node
+        when RubyVM::AbstractSyntaxTree::Node, Hash, Array
+          method_name = "NODE_#{node.type}"
+          respond_to?(method_name, true) ? send(method_name, node, opt.dup) : node
+        else
+          node
+        end
       end
 
       private

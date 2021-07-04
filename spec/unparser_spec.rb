@@ -2307,4 +2307,19 @@ RSpec.describe Rensei::Unparser do
       it { is_expected.to unparsed "(1 + 2)" }
     end
   end
+
+  describe "with Array" do
+    context "by 2.6.0", ruby_version: "2.6.0"..."2.7.0" do
+      let(:node) {
+        [:OPCALL, [[:LIT, [1]], :+, [:ARRAY, [[:LIT, [2]], nil]]]]
+      }
+      it { is_expected.to unparsed "(1 + 2)" }
+    end
+    context "by 2.7.0", ruby_version: "2.7.0"... do
+      let(:node) {
+        [:OPCALL, [[:LIT, [1]], :+, [:LIST, [[:LIT, [2]], nil]]]]
+      }
+      it { is_expected.to unparsed "(1 + 2)" }
+    end
+  end
 end
