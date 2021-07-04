@@ -46,7 +46,7 @@ module Rensei
       # example: foo; bar
       def NODE_BLOCK(node, opt = {})
         node.children.each_slice(2).map { |head, next_|
-          if head&.type == :BEGIN && opt.delete(:NODE_BEGIN_WITHOUT_BEGIN)
+          if head&.type == :BEGIN && opt.delete(:without_BEGIN)
             "#{unparse(next_, opt)}"
           # Support by BEGIN { foo }
           elsif next_&.type == :BEGIN
@@ -117,7 +117,7 @@ module Rensei
       def NODE_WHEN(node, opt = {})
         node.children.then { |head, body, next_|
           <<~EOS.chomp
-          when #{unparse(head, opt.merge(NODE_ARRAY_EXPAND: true))}
+          when #{unparse(head, opt.merge(expand_ARRAY: true))}
             #{unparse(body, opt)}
           #{next_&.type == :WHEN || next_.nil? ? unparse(next_, opt) : "else\n  #{unparse(next_, opt)}"}
           EOS
@@ -277,7 +277,7 @@ module Rensei
       # example: begin; foo; rescue; bar; else; baz; end
       def NODE_RESBODY(node, opt = {})
         node.children.then { |args, body|
-          args_ = args&.then { |it| unparse(it, opt.merge(NODE_ARRAY_EXPAND: true)) + ";" }
+          args_ = args&.then { |it| unparse(it, opt.merge(expand_ARRAY: true)) + ";" }
           if body.type == :BLOCK
             if body.children.first&.children[1]&.type == :ERRINFO
               "rescue #{args_}#{unparse(body, opt)}"
@@ -338,12 +338,12 @@ module Rensei
 
           # Support: (a,) = value
           if _right&.empty?
-            _left = unparse(left, opt.merge(NODE_ARRAY_EXPAND: true)) || "*"
+            _left = unparse(left, opt.merge(expand_ARRAY: true)) || "*"
           elsif left
             if node_masgn && left.children.count <= 2
-              _left = left.children.map(&_unparse(opt.merge(NODE_ARRAY_EXPAND: true))).first
+              _left = left.children.map(&_unparse(opt.merge(expand_ARRAY: true))).first
             else
-              _left = left.children.map(&_unparse(opt.merge(NODE_ARRAY_EXPAND: true))).join(", ")
+              _left = left.children.map(&_unparse(opt.merge(expand_ARRAY: true))).join(", ")
             end
           end
 
@@ -379,7 +379,7 @@ module Rensei
             "#{vid}:#{value&.then { |it| " #{unparse(it, opt)}" }}"
           elsif value.nil? || (_value = unparse(value, opt)).empty?
             "#{vid}"
-          elsif opt.delete(:NODE_LASGN_EXPAND)
+          elsif opt.delete(:expand_LASGN)
             "#{vid} = #{_value}"
           elsif value.type == :ERRINFO
             "=> #{vid}"
@@ -414,7 +414,7 @@ module Rensei
             "#{vid}:#{value&.then { |it| " #{unparse(it, opt)}" }}"
           elsif value.nil?
             "#{vid}"
-          elsif opt.delete(:NODE_DASGN_CURR_EXPAND)
+          elsif opt.delete(:expand_DASGN_CURR)
             "#{vid} = #{unparse(value, opt)}"
           else
             "(#{vid} = #{unparse(value, opt)})"
@@ -484,7 +484,7 @@ module Rensei
       # example: ary[1] += foo
       def NODE_OP_ASGN1(node, opt = {})
         node.children.then { |recv, op, head, mid|
-          "(#{unparse(recv, opt)}[#{unparse(head, opt.merge(NODE_ARRAY_EXPAND: true))}] #{op}= #{unparse(mid, opt.merge(NODE_ARRAY_EXPAND: true))})"
+          "(#{unparse(recv, opt)}[#{unparse(head, opt.merge(expand_ARRAY: true))}] #{op}= #{unparse(mid, opt.merge(expand_ARRAY: true))})"
         }
       end
 
@@ -538,7 +538,7 @@ module Rensei
       # example: obj.foo(1)
       def NODE_CALL(node, opt = {})
         node.children.then { |receiver, mid, args|
-          "#{unparse(receiver, opt)}.#{unparse(mid, opt)}(#{unparse(args, opt.merge(NODE_ARRAY_EXPAND: true))})"
+          "#{unparse(receiver, opt)}.#{unparse(mid, opt)}(#{unparse(args, opt.merge(expand_ARRAY: true))})"
         }
       end
 
@@ -551,7 +551,7 @@ module Rensei
           if right == nil
             "(#{op.to_s.delete_suffix("@")}#{unparse(left, opt)})"
           else
-            "(#{unparse(left, opt)} #{op} #{unparse(right, opt.merge(NODE_ARRAY_EXPAND: true))})"
+            "(#{unparse(left, opt)} #{op} #{unparse(right, opt.merge(expand_ARRAY: true))})"
           end
         }
       end
@@ -563,9 +563,9 @@ module Rensei
         node.children.then { |mid, args|
           # Support `self[key]`
           if mid == :[]
-            "self[#{unparse(args, opt.merge(NODE_ARRAY_EXPAND: true))}]"
+            "self[#{unparse(args, opt.merge(expand_ARRAY: true))}]"
           else
-            "#{unparse(mid, opt)}(#{unparse(args, opt.merge(NODE_ARRAY_EXPAND: true))})"
+            "#{unparse(mid, opt)}(#{unparse(args, opt.merge(expand_ARRAY: true))})"
           end
         }
       end
@@ -582,7 +582,7 @@ module Rensei
       # example: obj&.foo(1)
       def NODE_QCALL(node, opt = {})
         node.children.then { |receiver, mid, args|
-          "#{unparse(receiver, opt)}&.#{unparse(mid, opt)}(#{unparse(args, opt.merge(NODE_ARRAY_EXPAND: true))})"
+          "#{unparse(receiver, opt)}&.#{unparse(mid, opt)}(#{unparse(args, opt.merge(expand_ARRAY: true))})"
         }
       end
 
@@ -591,7 +591,7 @@ module Rensei
       # example: super 1
       def NODE_SUPER(node, opt = {})
         node.children.then { |args, |
-          "super(#{unparse(args, opt.merge(NODE_ARRAY_EXPAND: true))})"
+          "super(#{unparse(args, opt.merge(expand_ARRAY: true))})"
         }
       end
 
@@ -607,8 +607,8 @@ module Rensei
       # example: [1, 2, 3]
       def NODE_ARRAY(node, opt = {})
         node.children.then { |*args, _nil|
-          if opt[:NODE_ARRAY_EXPAND]
-            "#{args.map(&_unparse(opt.except(:NODE_ARRAY_EXPAND))).join(", ")}"
+          if opt[:expand_ARRAY]
+            "#{args.map(&_unparse(opt.except(:expand_ARRAY))).join(", ")}"
           else
             "[#{args.map(&_unparse(opt)).join(", ")}]"
           end
@@ -658,7 +658,7 @@ module Rensei
       # example: yield 1
       def NODE_YIELD(node, opt = {})
         node.children.then { |head,|
-          "yield(#{unparse(head, opt.merge(NODE_ARRAY_EXPAND: true))})"
+          "yield(#{unparse(head, opt.merge(expand_ARRAY: true))})"
         }
       end
 
@@ -771,7 +771,7 @@ module Rensei
       # example: 'foo'
       def NODE_STR(node, opt = {})
         node.children.first.dump
-        if opt.delete(:NODE_STR_IGNORE_QUOTE)
+        if opt.delete(:ignore_quote_STR)
           node.children.first.to_s.escape
         else
           node.children.first.dump
@@ -798,15 +798,15 @@ module Rensei
       # format: [nd_lit]
       # example: \"foo#{ bar }baz\"
       def NODE_DSTR(node, opt = {})
-        "\"#{_NODE_DSTR_without_quote(node, opt)}\""
+        "\"#{without_DSTR_quote(node, opt)}\""
       end
-      def _NODE_DSTR_without_quote(node, opt)
+      def without_DSTR_quote(node, opt)
         node.children.then { |prefix, lit, suffix|
           suffix_ = suffix&.children&.compact&.map { |it|
             if it.type == :STR
-              unparse(it, opt.merge(NODE_STR_IGNORE_QUOTE: true))
+              unparse(it, opt.merge(ignore_quote_STR: true))
             else
-              unparse(it, opt.merge(NODE_STR_IGNORE_QUOTE: false))
+              unparse(it, opt.merge(ignore_quote_STR: false))
             end
           }&.join
           "#{prefix&.escape}#{unparse(lit, opt)}#{suffix_}"
@@ -817,7 +817,7 @@ module Rensei
       # format: [nd_lit]
       # example: `foo#{ bar }baz`
       def NODE_DXSTR(node, opt = {})
-        "`#{_NODE_DSTR_without_quote(node, opt)}`"
+        "`#{without_DSTR_quote(node, opt)}`"
       end
 
       # regexp literal with interpolation
@@ -879,7 +879,7 @@ module Rensei
       # example: foo(*ary)
       def NODE_SPLAT(node, opt = {})
         node.children.then { |head,|
-          "*#{unparse(head, opt.merge(NODE_ARRAY_EXPAND: false))}"
+          "*#{unparse(head, opt.merge(expand_ARRAY: false))}"
         }
       end
 
@@ -954,7 +954,7 @@ module Rensei
         node.children.then { |cpath, super_, body|
           <<~EOS.chomp
           class #{unparse(cpath, opt)}#{super_&.then { |it| " < #{unparse(it, opt)}" } }
-            #{unparse(body, opt.merge(NODE_BEGIN_WITHOUT_BEGIN: true))}
+            #{unparse(body, opt.merge(without_BEGIN: true))}
           end
           EOS
         }
@@ -967,7 +967,7 @@ module Rensei
         node.children.then { |cpath, body|
           <<~EOS.chomp
           module #{unparse(cpath, opt)}
-            #{unparse(body, opt.merge(NODE_BEGIN_WITHOUT_BEGIN: true))}
+            #{unparse(body, opt.merge(without_BEGIN: true))}
           end
           EOS
         }
@@ -980,7 +980,7 @@ module Rensei
         node.children.then { |recv, body|
           <<~EOS.chomp
           class << #{unparse(recv, opt)}
-            #{unparse(body, opt.merge(NODE_BEGIN_WITHOUT_BEGIN: true))}
+            #{unparse(body, opt.merge(without_BEGIN: true))}
           end
           EOS
         }
@@ -1100,9 +1100,9 @@ module Rensei
         node.children.then { |recv, mid, args|
           if mid == :[]=
             *args_, right, _ = args.children
-            "#{unparse(recv, opt)}[#{args_.map(&_unparse(opt.merge(NODE_ARRAY_EXPAND: true))).join(", ")}] = #{unparse(right, opt.merge(NODE_ARRAY_EXPAND: true))}"
+            "#{unparse(recv, opt)}[#{args_.map(&_unparse(opt.merge(expand_ARRAY: true))).join(", ")}] = #{unparse(right, opt.merge(expand_ARRAY: true))}"
           else
-            "#{unparse(recv, opt)}.#{mid}#{unparse(args, opt.merge(NODE_ARRAY_EXPAND: true))}"
+            "#{unparse(recv, opt)}.#{mid}#{unparse(args, opt.merge(expand_ARRAY: true))}"
           end
         }
       end
@@ -1121,7 +1121,7 @@ module Rensei
       # format: def method_name([nd_body=some], [nd_next..])
       # example: def foo(a, b=1, c); end
       def NODE_OPT_ARG(node, opt = {})
-        node.children.map(&_unparse(opt.merge(NODE_DASGN_CURR_EXPAND: true, NODE_LASGN_EXPAND: true))).compact.join(", ")
+        node.children.map(&_unparse(opt.merge(expand_DASGN_CURR: true, expand_LASGN: true))).compact.join(", ")
       end
       def unparse_NODE_OPT_ARG(node, opt = {})
         node.children.then { |head, children|
@@ -1146,7 +1146,7 @@ module Rensei
       # example: a, *rest, z = foo
       def NODE_POSTARG(node, opt = {})
         node.children.then { |_1st, _2nd|
-          "#{unparse(_1st, opt)}, #{unparse(_2nd, opt.merge(NODE_ARRAY_EXPAND: true))}"
+          "#{unparse(_1st, opt)}, #{unparse(_2nd, opt.merge(expand_ARRAY: true))}"
         }
       end
 
@@ -1188,7 +1188,7 @@ module Rensei
             unparsed_post_init: info[:post_init]&.then { |node|
               node.type == :BLOCK ? node.children.map(&_unparse(opt)) : [unparse(node, opt)]
             } || [],
-            unparsed_opt: info[:opt]&.then { |it| unparse_NODE_OPT_ARG(it, opt.merge(NODE_DASGN_CURR_EXPAND: true, NODE_LASGN_EXPAND: true)) } || [],
+            unparsed_opt: info[:opt]&.then { |it| unparse_NODE_OPT_ARG(it, opt.merge(expand_DASGN_CURR: true, expand_LASGN: true)) } || [],
             unparsed_rest: unparse(info[:rest], opt)&.then { |it|
               if it == :NODE_SPECIAL_EXCESSIVE_COMMA
                 [" "]
@@ -1196,7 +1196,7 @@ module Rensei
                 ["*#{it}"]
               end
             } || [],
-            unparsed_kw: info[:kw]&.then { |it| unparse_NODE_KW_ARG(it, opt.merge(NODE_DASGN_CURR_EXPAND: true, NODE_LASGN_EXPAND: true, KW_ARG: true)) } || [],
+            unparsed_kw: info[:kw]&.then { |it| unparse_NODE_KW_ARG(it, opt.merge(expand_DASGN_CURR: true, expand_LASGN: true, KW_ARG: true)) } || [],
             unparsed_kwrest: info[:kwrest]&.then { |it| "**#{unparse(it, opt)}" },
           )
         }
