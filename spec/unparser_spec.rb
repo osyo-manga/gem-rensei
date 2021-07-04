@@ -34,14 +34,14 @@ RSpec.describe Rensei::Unparser do
       let(:code) { code }
       it { expect { RubyVM::AbstractSyntaxTree.parse(code) }.not_to raise_error }
       it { expect(RubyVM::AbstractSyntaxTree.parse(Rensei::Unparser.unparse(node)).children.last.to_h).to eq node.to_h }
-      instance_eval &block if block
+      instance_eval(&block) if block
     end
   end
 
   def self.xparse_by(code, &block)
     xcontext "parse by `#{code}`" do
       let(:code) { code }
-      instance_eval &block if block
+      instance_eval(&block) if block
     end
   end
 

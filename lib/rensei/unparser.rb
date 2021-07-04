@@ -1169,16 +1169,16 @@ module Rensei
       # example: def foo(a, b, opt1=1, opt2=2, *rest, y, z, &blk); end
       def NODE_ARGS(node, opt_ = {})
         (
-          pre_num,
-          pre_init,
+          _, # pre_num
+          _, # pre_init
           opt,
-          first_post,
-          post_num,
-          post_init,
-          rest,
-          kw,
-          kwrest,
-          block
+          _, # first_post
+          _, # post_num
+          _, # post_init
+          _, # rest
+          _, # kw
+          _, # kwrest
+          _, # block
         ) = node.children
         "#{unparse(opt, opt_)}#{unparse(kw, opt_)}"
       end
