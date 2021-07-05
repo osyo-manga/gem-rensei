@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.description   = %q{Unparse from `RubyVM::AbstractSyntaxTree::Node` to Ruby code.}
   spec.homepage      = ""
   spec.license       = "MIT"
-  spec.required_ruby_version = Gem::Requirement.new(">= 2.3.0")
+  spec.required_ruby_version = Gem::Requirement.new(">= 2.6.0")
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
