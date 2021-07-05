@@ -22,7 +22,7 @@ RSpec.describe Rensei::NodeToHash do
               ),
               :+,
               include(
-                type: :LIST,
+                type: eq(:LIST).or(eq :ARRAY),
                 children: include(
                   type: :LIT,
                   children: [2]
