@@ -2294,7 +2294,7 @@ RSpec.describe Rensei::Unparser do
            :+,
            {:type=>:ARRAY, :children=>[{:type=>:LIT, :children=>[2]}, nil]}]}
       }
-      it { is_expected.to unparsed "1 + 2" }
+      it { is_expected.to unparsed "(1 + 2)" }
     end
     context "by 2.7.0", ruby_version: "2.7.0"... do
       let(:node) {
