@@ -6,7 +6,7 @@ module Rensei
       using NodeToHash
       using Module.new {
         refine Object do
-          def to_hashable
+          def to_h
             to_s
           end
         end
