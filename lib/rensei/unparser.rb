@@ -1362,8 +1362,10 @@ module Rensei
       end
     end
 
-    module Ruby3_0_0
+    module Ruby2_7_2
       include Ruby2_7_0
+
+      private
 
       # attr assignment with operator
       # format: [nd_recv].[attr] [nd_next->nd_mid]= [nd_value]
@@ -1374,6 +1376,10 @@ module Rensei
           "#{unparse(recv, opt)}.#{attr} #{op}= #{unparse(mid, opt)}"
         }
       end
+    end
+
+    module Ruby3_0_0
+      include Ruby2_7_2
 
       # string literal with interpolation
       # format: [nd_lit]
@@ -1393,8 +1399,10 @@ module Rensei
     case RUBY_VERSION
     when ("2.6.0"..."2.7.0")
       VERSION = Ruby2_6_0
-    when ("2.7.0"..."3.0.0")
+    when ("2.7.0"..."2.7.2")
       VERSION = Ruby2_7_0
+    when ("2.7.2"..."3.0.0")
+      VERSION = Ruby2_7_2
     when ("3.0.0"...)
       VERSION = Ruby3_0_0
     else
