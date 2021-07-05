@@ -1,3 +1,5 @@
+[![Ruby CI](https://github.com/osyo-manga/gem-rensei/actions/workflows/rensei.yml/badge.svg)](https://github.com/osyo-manga/gem-rensei/actions/workflows/rensei.yml)
+
 # Rensei
 
 Unparse from `RubyVM::AbstractSyntaxTree::Node` to Ruby code.
