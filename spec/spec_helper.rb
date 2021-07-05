@@ -1,5 +1,6 @@
 require "bundler/setup"
 require "rensei"
+require "super_diff/rspec"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
