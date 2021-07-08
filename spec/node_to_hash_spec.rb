@@ -32,32 +32,6 @@ RSpec.describe Rensei::NodeToHash do
           )
         )
       ) }
-      it { is_expected.not_to include(
-        first_column: 0,
-        last_column: 5,
-        first_lineno: 1,
-        last_lineno: 1
-      ) }
-    end
-
-    context "with `ignore_codeposition: true`" do
-      let(:arguments) { { ignore_codeposition: true } }
-      it { is_expected.not_to include(
-        first_column: 0,
-        last_column: 5,
-        first_lineno: 1,
-        last_lineno: 1
-      ) }
-    end
-
-    context "with `ignore_codeposition: false`" do
-      let(:arguments) { { ignore_codeposition: false } }
-      it { is_expected.to include(
-        first_column: 0,
-        last_column: 5,
-        first_lineno: 1,
-        last_lineno: 1
-      ) }
     end
   end
 end
