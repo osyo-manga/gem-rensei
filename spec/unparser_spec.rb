@@ -49,12 +49,12 @@ RSpec.describe Rensei::Unparser do
 
   describe "NODE_BLOCK" do
     parse_by "hoge; foo" do
-      it { is_expected.to unparsed "hoge; foo" }
+      it { is_expected.to unparsed "begin hoge; foo; end" }
       it { is_expected.to type_of :BLOCK }
     end
 
     parse_by "hoge\nfoo" do
-      it { is_expected.to unparsed "hoge; foo" }
+      it { is_expected.to unparsed "begin hoge; foo; end" }
       it { is_expected.to type_of :BLOCK }
     end
   end
@@ -342,10 +342,39 @@ RSpec.describe Rensei::Unparser do
       it { is_expected.to unparsed "begin; 1; end" }
     end
     parse_by "begin; 1; end; 1" do
-      it { is_expected.to unparsed "begin; 1; end; 1;" }
+      it { is_expected.to unparsed "begin; 1; 1; end" }
+    end
+    context "by 2.6.0", ruby_version: "2.6.0"..."2.7.0" do
+      parse_by "a = begin; foo; bar; hoge end" do
+        it { is_expected.to unparsed "(a = begin; foo; bar; hoge; end)" }
+      end
+    end
+    context "by 3.0.0", ruby_version: "3.0.0"... do
+      parse_by "a = begin; foo; bar; hoge end" do
+        it { is_expected.to unparsed "(a = begin\n  begin; foo; bar; hoge; end\nend)" }
+      end
+    end
+    parse_by "begin hoge; end" do
+      it { is_expected.to unparsed "hoge" }
+    end
+    parse_by "begin hoge; foo; end" do
+      it { is_expected.to unparsed "begin hoge; foo; end" }
+    end
+    context "by 2.6.0", ruby_version: "2.6.0"..."2.7.0" do
+      parse_by "a = begin foo; bar; hoge end" do
+        it { is_expected.to unparsed "(a = begin foo; bar; hoge; end)" }
+      end
+    end
+    context "by 3.0.0", ruby_version: "3.0.0"... do
+      parse_by "a = begin foo; bar; hoge end" do
+        it { is_expected.to unparsed "(a = begin\n  begin foo; bar; hoge; end\nend)" }
+      end
     end
     parse_by "BEGIN { foo }" do
       it { is_expected.to unparsed "BEGIN { foo }" }
+    end
+    parse_by "BEGIN { foo; bar }" do
+      it { is_expected.to unparsed "BEGIN { begin foo; bar; end }" }
     end
   end
 
@@ -357,6 +386,17 @@ RSpec.describe Rensei::Unparser do
         rescue ; bar
         else
           begin; baz; end
+        end
+      EOS
+      it { is_expected.to type_of :RESCUE }
+    end
+    parse_by "begin; foo; hoge; rescue; bar; piyo; else; baz; foo; end" do
+      it { is_expected.to unparsed(<<~EOS.chomp) }
+        begin
+          begin; foo; hoge; end
+        rescue ;begin bar; piyo; end
+        else
+          begin; baz; foo; end
         end
       EOS
       it { is_expected.to type_of :RESCUE }
@@ -386,6 +426,14 @@ RSpec.describe Rensei::Unparser do
         rescue => e; bar
         else
           begin; baz; end
+        end
+      EOS
+    end
+    parse_by "begin; foo; rescue => e; begin; hoge; bar; end end" do
+      it { is_expected.to unparsed(<<~EOS.chomp) }
+        begin
+          begin; foo; end
+        rescue => e; ; hoge; bar
         end
       EOS
     end
@@ -448,7 +496,7 @@ RSpec.describe Rensei::Unparser do
       it { is_expected.to unparsed(<<~EOS.chomp) }
         begin
           foo
-        rescue ;bar; hoge
+        rescue ;begin bar; hoge; end
         end
       EOS
     end
@@ -463,7 +511,7 @@ RSpec.describe Rensei::Unparser do
       it { is_expected.to unparsed(<<~EOS.chomp) }
         begin
           foo
-        rescue e;bar; hoge
+        rescue e;begin bar; hoge; end
         end
       EOS
     end
@@ -478,7 +526,7 @@ RSpec.describe Rensei::Unparser do
       it { is_expected.to unparsed(<<~EOS.chomp) }
         begin
           foo
-        rescue e1, e2;bar; hoge
+        rescue e1, e2;begin bar; hoge; end
         end
       EOS
     end
@@ -733,13 +781,13 @@ RSpec.describe Rensei::Unparser do
 
   describe "NODE_DASGN" do
     parse_by "x = nil; 1.times { x = foo }" do
-      it { is_expected.to unparsed "(x = nil); 1.times() { (x = foo) }" }
+      it { is_expected.to unparsed "begin (x = nil); 1.times() { (x = foo) }; end" }
     end
     parse_by "x = nil; 1.times { x = foo and hoge }" do
-      it { is_expected.to unparsed "(x = nil); 1.times() { ((x = foo) && hoge) }" }
+      it { is_expected.to unparsed "begin (x = nil); 1.times() { ((x = foo) && hoge) }; end" }
     end
-    parse_by "hoge(a = 1) { a, b = c }" do
-      it { is_expected.to unparsed "hoge((a = 1)) { (a, b, ) = c }" }
+    parse_by "begin (x = 42); x; end" do
+      it { is_expected.to unparsed "begin (x = 42); x; end" }
     end
   end
 
@@ -1212,13 +1260,13 @@ RSpec.describe Rensei::Unparser do
 
   describe "NODE_LVAR" do
     parse_by "x = 42; x" do
-      it { is_expected.to unparsed "(x = 42); x" }
+      it { is_expected.to unparsed "begin (x = 42); x; end" }
     end
   end
 
   describe "NODE_DVAR" do
     parse_by "1.times { x = 1; x }" do
-      it { is_expected.to unparsed "1.times() { (x = 1); x }" }
+      it { is_expected.to unparsed "1.times() { begin (x = 1); x; end }" }
     end
   end
 
@@ -2216,7 +2264,7 @@ RSpec.describe Rensei::Unparser do
       it { is_expected.to unparsed "3.times(3) { foo }" }
     end
     parse_by "3.times { foo; bar }" do
-      it { is_expected.to unparsed "3.times() { foo; bar }" }
+      it { is_expected.to unparsed "3.times() { begin foo; bar; end }" }
     end
   end
 
@@ -2238,7 +2286,7 @@ RSpec.describe Rensei::Unparser do
 
   context "other" do
     parse_by "x = foo; f(42)" do
-      it { is_expected.to unparsed "(x = foo); f(42)" }
+      it { is_expected.to unparsed "begin (x = foo); f(42); end" }
     end
     parse_by "if x = foo then hoge end" do
       it { is_expected.to unparsed(<<~EOS.chomp) }

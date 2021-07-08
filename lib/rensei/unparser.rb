@@ -59,18 +59,24 @@ module Rensei
       # format: [nd_head]; ...; [nd_next]
       # example: foo; bar
       def NODE_BLOCK(node, opt = {})
-        node.children.each_slice(2).map { |head, next_|
-          if head&.type == :BEGIN && opt.delete(:without_BEGIN)
-            "#{unparse(next_, opt)}"
+        node.children.then { |head, *nexts|
+          if head&.type == :BEGIN && opt[:without_BEGIN]
+            nexts.map(&_unparse(opt.except(:without_BEGIN))).join("; ")
+          elsif opt[:without_BEGIN]
+            [head, *nexts].map(&_unparse(opt.except(:without_BEGIN))).join("; ")
           # Support by BEGIN { foo }
-          elsif next_&.type == :BEGIN
+          elsif nexts&.first&.type == :BEGIN
             "BEGIN { #{unparse(head.children.first, opt)} }"
           elsif head.type == :BEGIN
-            "begin; #{unparse(next_, opt)}; end"
+            "begin; #{nexts.map(&_unparse(opt)).join("; ")}; end"
           else
-            "#{unparse(head, opt)};#{next_ ? " #{unparse(next_, opt)}" : ""}"
+            if nexts.empty?
+              "#{unparse(head, opt)};"
+            else
+              "begin #{[head, *nexts].map(&_unparse(opt)).join("; ")}; end"
+            end
           end
-        }.join("; ")
+        }
       end
 
       # if statement
@@ -262,11 +268,10 @@ module Rensei
       # example: begin; 1; end
       def NODE_BEGIN(node, opt = {})
         return "" if node.children.first.nil?
-#         return "begin; end" if node.children.first.nil?
         node.children.then { |body|
           <<~EOS.chomp
           begin
-            #{unparse(body, opt)}
+            #{body.map(&_unparse(opt)).join("; ")}
           end
           EOS
         }
@@ -294,7 +299,7 @@ module Rensei
           args_ = args&.then { |it| unparse(it, opt.merge(expand_ARRAY: true)) + ";" }
           if body.type == :BLOCK
             if body.children.first&.children[1]&.type == :ERRINFO
-              "rescue #{args_}#{unparse(body, opt)}"
+              "rescue #{args_}#{unparse(body, opt.merge(without_BEGIN: true))}"
             else
               "rescue #{args_ || ";"}#{unparse(body, opt)}"
             end
@@ -387,11 +392,12 @@ module Rensei
       # example: x = foo
       def NODE_LASGN(node, opt = {})
         node.children.then { |vid, value|
+          _value = unparse(value, opt)
           if value == :NODE_SPECIAL_REQUIRED_KEYWORD
             "#{vid}:"
           elsif opt.delete(:KW_ARG)
             "#{vid}:#{value&.then { |it| " #{unparse(it, opt)}" }}"
-          elsif value.nil? || (_value = unparse(value, opt)).empty?
+          elsif value.nil? || (_value).empty?
             "#{vid}"
           elsif opt.delete(:expand_LASGN)
             "#{vid} = #{_value}"
