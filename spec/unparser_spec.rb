@@ -1,49 +1,12 @@
 require_relative "./spec_helper.rb"
-
+require_relative "./helpers/unparser.rb"
 
 RSpec.describe Rensei::Unparser do
-  using Rensei::NodeToHash
-
-  before :each do |example|
-    unless (example.metadata[:ruby_version] || ("2.6.0"...)).cover? RUBY_VERSION
-      skip
-    end
-  end
-  define_method(:ruby_version_is) { |version, &block|
-    context version, ruby_version: version, &block
-  }
+  include UnparserHelper
+  extend UnparserHelper::ClassMethods
 
   let(:ast) { RubyVM::AbstractSyntaxTree.parse(code) }
   let(:node) { ast.children.last }
-
-  define_method(:unparsed) { |code|
-    satisfy("be `#{Rensei::Unparser.unparse(node).inspect}`") { |node| code == Rensei::Unparser.unparse(node) }
-  }
-  define_method(:type_of) { |type|
-    satisfy("be type `:#{node.type}`") { |node| node.type == type }
-  }
-  define_method(:children_type_of) { |type|
-    satisfy("be type `:#{node.children.first.type}`") { |node| node.children.first.type == type }
-  }
-  #
-  # Expect failure print
-  #   -> BLOCK parse by `hoge; foo` should unparsed "hoge; fo"
-  #
-  def self.parse_by(code, **kwd, &block)
-    context "parse by `#{code}`", **kwd do
-      let(:code) { code }
-      it { expect { RubyVM::AbstractSyntaxTree.parse(code) }.not_to raise_error }
-      it { expect(RubyVM::AbstractSyntaxTree.parse(Rensei::Unparser.unparse(node)).children.last.to_h).to eq node.to_h }
-      instance_eval(&block) if block
-    end
-  end
-
-  def self.xparse_by(code, &block)
-    xcontext "parse by `#{code}`" do
-      let(:code) { code }
-      instance_eval(&block) if block
-    end
-  end
 
   subject { node }
 

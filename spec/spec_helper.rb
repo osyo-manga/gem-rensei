@@ -12,4 +12,10 @@ RSpec.configure do |config|
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
+
+  config.before(:each) do |example|
+    unless (example.metadata[:ruby_version] || ("2.6.0"...)).cover? RUBY_VERSION
+      skip
+    end
+  end
 end
