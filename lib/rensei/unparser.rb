@@ -339,7 +339,13 @@ module Rensei
       # example: foo || bar
       def NODE_OR(node, opt = {})
         node.children.then { |args|
-          "(#{args.map { |node| unparse(node, opt) }.join(" || ")})"
+          # Support pattern match
+          # in String | Integer
+          if opt[:pattern_match_OR]
+            "#{args.map { |node| unparse(node, opt) }.join(" | ")}"
+          else
+            "(#{args.map { |node| unparse(node, opt) }.join(" || ")})"
+          end
         }
       end
 
@@ -664,11 +670,14 @@ module Rensei
           elsif head.children.first.nil?
             "**#{unparse(head.children[1], opt)}"
           else
-            "{ #{
-              (head).children[0..-2].map(&_unparse(opt)).each_slice(2).map { |key, value|
+            result = (head).children[0..-2].map(&_unparse(opt)).each_slice(2).map { |key, value|
                 "#{key} => #{value}"
               }.join(", ")
-             } }"
+            if opt[:expand_HASH]
+              "#{result}"
+            else
+              "{ #{result} }"
+            end
           end
         }
       end
@@ -686,7 +695,13 @@ module Rensei
       # format: [nd_vid](lvar)
       # example: x
       def NODE_LVAR(node, opt = {})
-        node.children.first.to_s
+        # Support pattern match
+        # in ^expr
+        if opt[:pattern_match_LVAR]
+          "^#{node.children.first}"
+        else
+          "#{node.children.first}"
+        end
       end
 
       # dynamic variable reference
@@ -1322,9 +1337,13 @@ module Rensei
       # format: case [nd_head]; [nd_body]; end
       # example: case x; in 1; foo; in 2; bar; else baz; end
       def NODE_CASE3(node, opt = {})
-        # Ruby 2.7
-        # :TODO:
-        node
+        node.children.then { |head, body, else_|
+          <<~EOS.chomp
+          case #{unparse(head, opt)}
+          #{unparse(body, opt)}#{else_ ? "\nelse\n#{unparse(else_, opt)}" : ""}
+          end
+          EOS
+        }
       end
 
       # list constructor
@@ -1339,7 +1358,13 @@ module Rensei
       end
 
       def NODE_IN(node, opt = {})
-        # TODO
+        node.children.then { |head, body, next_|
+          <<~EOS.chomp
+          in #{unparse(head, opt.merge(expand_ARRAY: true))}
+            #{unparse(body, opt)}
+          #{next_&.type == :IN || next_.nil? ? unparse(next_, opt) : "else\n  #{unparse(next_, opt)}"}
+          EOS
+        }
       end
 
       # splat argument following arguments
@@ -1358,10 +1383,21 @@ module Rensei
       # array pattern
       # format: [nd_pconst]([pre_args], ..., *[rest_arg], [post_args], ...)
       def NODE_ARYPTN(node, opt = {})
-        # :TODO:
-        node
+        node.children.then { |pconst, pre, rest, post|
+          opt_flags = { expand_ARRAY: true, expand_HASH: true, pattern_match_OR: true, pattern_match_LVAR: true }
+          pre_ = unparse(pre, opt.merge(opt_flags))
+          if rest == :NODE_SPECIAL_NO_NAME_REST
+            rest_ = "*"
+          elsif rest
+            rest_ = "*#{unparse(rest, opt.merge(opt_flags))}"
+          end
+          post_ = unparse(post, opt.merge(opt_flags))
+          "[#{[pre_, rest_, post_].compact.join(", ")}]"
+        }
       end
 
+      # hash pattern
+      # format: [nd_pconst]([nd_pkwargs], ..., **[nd_pkwrestarg])
       def NODE_HSHPTN(node, opt = {})
         # :TODO:
         node
