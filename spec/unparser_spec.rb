@@ -112,6 +112,16 @@ RSpec.describe Rensei::Unparser do
       EOS
       it { is_expected.to type_of :CASE }
     end
+    parse_by "case x; when 1, 2, 3; foo; end" do
+      it { is_expected.to unparsed(<<~EOS.chomp) }
+        case x
+        when 1, 2, 3
+          foo
+
+        end
+      EOS
+      it { is_expected.to type_of :CASE }
+    end
   end
 
   describe "NODE_CASE2" do
