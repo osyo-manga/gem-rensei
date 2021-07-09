@@ -139,6 +139,23 @@ RSpec.describe Rensei::Unparser::Ruby2_7_0, ruby_version: "2.7.0"... do
       end
     end
 
+    describe "const" do
+      parse_by(<<~'EOS') do
+          case value
+          in Array[a, b]
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin Array[a, b]\n  \n\nend" }
+      end
+      parse_by(<<~'EOS') do
+          case value
+          in Array[a, Array[b, 1] | Array[c, 2]]
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin Array[a, Array[b, 1] | Array[c, 2]]\n  \n\nend" }
+      end
+    end
+
     describe "or" do
       parse_by(<<~'EOS') do
           case value

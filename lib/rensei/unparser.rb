@@ -1384,6 +1384,9 @@ module Rensei
       # format: [nd_pconst]([pre_args], ..., *[rest_arg], [post_args], ...)
       def NODE_ARYPTN(node, opt = {})
         node.children.then { |pconst, pre, rest, post|
+          # e.g. in Array[a, b]
+          pconst_ = unparse(pconst, opt) if pconst
+
           opt_flags = { expand_ARRAY: true, expand_HASH: true, pattern_match_OR: true, pattern_match_LVAR: true }
           pre_ = unparse(pre, opt.merge(opt_flags))
           if rest == :NODE_SPECIAL_NO_NAME_REST
@@ -1392,7 +1395,7 @@ module Rensei
             rest_ = "*#{unparse(rest, opt.merge(opt_flags))}"
           end
           post_ = unparse(post, opt.merge(opt_flags))
-          "[#{[pre_, rest_, post_].compact.join(", ")}]"
+          "#{pconst_}[#{[pre_, rest_, post_].compact.join(", ")}]"
         }
       end
 
