@@ -52,17 +52,37 @@ RSpec.describe Rensei::Unparser::Ruby2_7_0, ruby_version: "2.7.0"... do
       it { is_expected.to unparsed "case value\nin [1, 2]\n  hoge\n\nend" }
     end
 
-    xparse_by(<<~'EOS') do
-        case value
-        in [1, 2]
-          hoge
-        in { a:, b: }
-          bar
-        in other
-          foo
-        end
-      EOS
-      it { is_expected.to unparsed "case value\nin [1, 2]\n  hoge\n\nend" }
+    describe "Guard clauses" do
+      parse_by(<<~'EOS') do
+          case value
+          in a, b if b == a * 2
+            hoge
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin [a, b] if (b == (a * 2))\n  hoge\n\nend" }
+      end
+
+      parse_by(<<~'EOS') do
+          case value
+          in a, b unless b == a * 2
+            hoge
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin [a, b] unless (b == (a * 2))\n  hoge\n\nend" }
+      end
+
+      parse_by(<<~'EOS') do
+          case value
+          in a, b if b == a * 2
+            hoge
+          in a, b unless b == a * 3
+            foo
+          else
+            bar
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin [a, b] if (b == (a * 2))\n  hoge\nin [a, b] unless (b == (a * 3))\n  foo\nelse\n  bar\nend" }
+      end
     end
   end
 

@@ -1364,11 +1364,27 @@ module Rensei
 
       def NODE_IN(node, opt = {})
         node.children.then { |head, body, next_|
-          <<~EOS.chomp
-          in #{unparse(head, opt.merge(expand_ARRAY: true))}
-            #{unparse(body, opt)}
-          #{next_&.type == :IN || next_.nil? ? unparse(next_, opt) : "else\n  #{unparse(next_, opt)}"}
-          EOS
+          next__ = next_&.type == :IN || next_.nil? ? unparse(next_, opt) : "else\n  #{unparse(next_, opt)}"
+          case head.type
+          when :IF
+            <<~EOS.chomp
+            in #{unparse(head.children[1], opt.merge(expand_ARRAY: true))} if #{unparse(head.children[0], opt)}
+              #{unparse(body, opt)}
+            #{next__}
+            EOS
+          when :UNLESS
+            <<~EOS.chomp
+            in #{unparse(head.children[1], opt.merge(expand_ARRAY: true))} unless #{unparse(head.children[0], opt)}
+              #{unparse(body, opt)}
+            #{next__}
+            EOS
+          else
+            <<~EOS.chomp
+            in #{unparse(head, opt.merge(expand_ARRAY: true))}
+              #{unparse(body, opt)}
+            #{next__}
+            EOS
+          end
         }
       end
 
