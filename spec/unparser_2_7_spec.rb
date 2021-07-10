@@ -28,6 +28,15 @@ RSpec.describe Rensei::Unparser::Ruby2_7_0, ruby_version: "2.7.0"... do
       it { is_expected.to type_of :CASE3 }
     end
 
+    parse_by(<<~'EOS') do
+        case value
+        in [1, a, { b: b } => b_, { c: Integer | String => c }]
+          hoge
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin [1, a, { b: b } => b_, { c: Integer | String => c }]\n  hoge\n\nend" }
+    end
+
     xdescribe "Guard clauses" do
 
     end
@@ -205,6 +214,126 @@ RSpec.describe Rensei::Unparser::Ruby2_7_0, ruby_version: "2.7.0"... do
           end
         EOS
         it { is_expected.to unparsed "begin (expr = 18); case value\nin [^expr, [^expr], ^expr]\n  \n\nend; end" }
+      end
+    end
+  end
+
+  describe "NODE_HSHPTN" do
+    parse_by(<<~'EOS') do
+        case value
+        in { a:, b: }
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin { a: a, b: b }\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in { a:, b: { c: { d: d }, e: e } }
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin { a: a, b: { c: { d: d }, e: e } }\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in x: 0.. => px
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin { x: (0..nil) => px }\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in { a: String, b: Integer }
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin { a: String, b: Integer }\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in { a: String, b: Integer | X(x: x), c: X(d:, e: { f: String | Integer } => e_) }
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin { a: String, b: Integer | X[x: x], c: X[d: d, e: { f: String | Integer } => e_] }\n  \n\nend" }
+    end
+
+    describe "**nil" do
+      parse_by(<<~'EOS') do
+          case value
+          in { a: String, b: Integer, **nil }
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin { a: String, b: Integer, **nil }\n  \n\nend" }
+      end
+    end
+
+    describe "**" do
+      parse_by(<<~'EOS') do
+          case value
+          in { a: String, b: Integer, ** }
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin { a: String, b: Integer }\n  \n\nend" }
+      end
+      parse_by(<<~'EOS') do
+          case value
+          in { a: String, b: Integer, **rest }
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin { a: String, b: Integer, **rest }\n  \n\nend" }
+      end
+    end
+
+    describe "const" do
+      parse_by(<<~'EOS') do
+          case value
+          in X[a: a, b:]
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin X[a: a, b: b]\n  \n\nend" }
+      end
+      parse_by(<<~'EOS') do
+          case value
+          in X(a: { b: X(c:) })
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin X[a: { b: X[c: c] }]\n  \n\nend" }
+      end
+    end
+
+    describe "or" do
+      parse_by(<<~'EOS') do
+          case value
+          in { a: String | Integer }
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin { a: String | Integer }\n  \n\nend" }
+      end
+      parse_by(<<~'EOS') do
+          case value
+          in { a: String | Integer | Array }
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin { a: String | Integer | Array }\n  \n\nend" }
+      end
+    end
+
+    describe "Variable binding" do
+      parse_by(<<~'EOS') do
+          case value
+          in { a: Integer => a_, b: { c: String => c_ } => b_ }
+          end
+        EOS
+        it { is_expected.to unparsed "case value\nin { a: Integer => a_, b: { c: String => c_ } => b_ }\n  \n\nend" }
+      end
+    end
+
+    describe "Variable pinning" do
+      parse_by(<<~'EOS') do
+          expr = 18
+          case value
+          in { a: ^expr, b: { c: ^expr } }
+          end
+        EOS
+        it { is_expected.to unparsed "begin (expr = 18); case value\nin { a: ^expr, b: { c: ^expr } }\n  \n\nend; end" }
       end
     end
   end

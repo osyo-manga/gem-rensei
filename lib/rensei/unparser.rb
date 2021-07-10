@@ -1407,8 +1407,25 @@ module Rensei
       # hash pattern
       # format: [nd_pconst]([nd_pkwargs], ..., **[nd_pkwrestarg])
       def NODE_HSHPTN(node, opt = {})
-        # :TODO:
-        node
+        node.children.then { |pconst, pkwargs, pkwrestarg|
+
+          opt_flags = { expand_ARRAY: true, expand_HASH: true, pattern_match_OR: true, pattern_match_LVAR: true }
+
+          pkwargs_ = unparse(pkwargs, opt.merge(opt_flags))
+
+          if pkwrestarg == :NODE_SPECIAL_NO_REST_KEYWORD
+            pkwargs_ += ", **nil"
+          elsif pkwrestarg
+            pkwargs_ += ", **#{unparse(pkwrestarg, opt.merge(opt_flags))}"
+          end
+
+          # Support `in A[a: 1, b: 2]`
+          if pconst
+            "#{unparse(pconst, opt)}[#{pkwargs_}]"
+          else
+            "{ #{pkwargs_} }"
+          end
+        }
       end
     end
 
