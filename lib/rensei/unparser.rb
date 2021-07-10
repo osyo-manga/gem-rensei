@@ -670,9 +670,14 @@ module Rensei
           elsif head.children.first.nil?
             "**#{unparse(head.children[1], opt)}"
           else
-            result = (head).children[0..-2].map(&_unparse(opt)).each_slice(2).map { |key, value|
-                "#{key} => #{value}"
-              }.join(", ")
+            result = (head).children[0..-2].each_slice(2).map { |key, value|
+              if key.type == :LIT && Symbol === key.children.first
+                "#{key.children.first}: #{unparse(value, opt)}"
+              else
+                "#{unparse(key, opt)} => #{unparse(value, opt)}"
+              end
+            }.join(", ")
+
             if opt[:expand_HASH]
               "#{result}"
             else

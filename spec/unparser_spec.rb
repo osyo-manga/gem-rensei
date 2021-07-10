@@ -1193,16 +1193,16 @@ RSpec.describe Rensei::Unparser do
       it { is_expected.to type_of :HASH }
     end
     parse_by "{ hoge: foo, bar: piyo }" do
-      it { is_expected.to unparsed "{ :hoge => foo, :bar => piyo }" }
+      it { is_expected.to unparsed "{ hoge: foo, bar: piyo }" }
     end
     parse_by "{}" do
       it { is_expected.to unparsed "{}" }
     end
     parse_by "foo a: 1, b: 2" do
-      it { is_expected.to unparsed "foo({ :a => 1, :b => 2 })" }
+      it { is_expected.to unparsed "foo({ a: 1, b: 2 })" }
     end
     parse_by "foo hoge, a: 1, b: 2" do
-      it { is_expected.to unparsed "foo(hoge, { :a => 1, :b => 2 })" }
+      it { is_expected.to unparsed "foo(hoge, { a: 1, b: 2 })" }
     end
     parse_by "foo **kwd" do
       it { is_expected.to unparsed "foo(**kwd)" }
