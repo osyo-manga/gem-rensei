@@ -74,6 +74,13 @@ RSpec.describe Rensei::Unparser::Ruby2_7_0, ruby_version: "2.7.0"... do
       EOS
       it { is_expected.to unparsed "case value\nin [String, [1, [\"foo\", Integer]], \"hoge\"]\n  hoge\n\nend" }
     end
+    parse_by(<<~'EOS') do
+        case value
+        in  String => a, String => b
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin [String => a, String => b]\n  \n\nend" }
+    end
 
     describe "[pre, rest, post]" do
       context "name rest" do
