@@ -1348,6 +1348,10 @@ module Rensei
             kwrest = info[:unparsed_kwrest]
           end
 
+          if opt.delete(:ignore_numbered_paramters)
+            pre_args -= [:_1, :_2, :_3, :_4, :_5, :_6, :_7, :_8, :_9]
+          end
+
           params = [
             pre_args,
             info[:unparsed_opt].join(", "),
@@ -1495,6 +1499,13 @@ module Rensei
 
     module Ruby3_0_0
       include Ruby2_7_2
+
+      # method call with block
+      # format: [nd_iter] { [nd_body] }
+      # example: 3.times { foo }
+      def NODE_ITER(node, opt = {})
+        super(node, opt.merge(ignore_numbered_paramters: true))
+      end
 
       # string literal with interpolation
       # format: [nd_lit]

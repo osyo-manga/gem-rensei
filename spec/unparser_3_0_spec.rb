@@ -10,6 +10,21 @@ RSpec.describe Rensei::Unparser::Ruby3_0_0, ruby_version: "3.0.0"... do
 
   subject { node }
 
+  describe "NODE_ITER" do
+    parse_by "proc { _1 }" do
+      it { is_expected.to unparsed "proc() { _1 }" }
+    end
+    parse_by "proc { _9 }" do
+      it { is_expected.to unparsed "proc() { _9 }" }
+    end
+    parse_by "proc { _10 }" do
+      it { is_expected.to unparsed "proc() { _10 }" }
+    end
+    parse_by "proc { |_10| _10 }" do
+      it { is_expected.to unparsed "proc() { |_10| _10 }" }
+    end
+  end
+
   describe "NODE_DEFN" do
     parse_by "def hoge = 42", ruby_version: "3.0.0"..."3.1.0" do
       it { is_expected.to unparsed "def hoge = 42" }
