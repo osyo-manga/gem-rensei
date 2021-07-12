@@ -1010,6 +1010,50 @@ RSpec.describe Rensei::Unparser do
     parse_by "hoge.[]=foo" do
       it { is_expected.to unparsed "hoge.[]=(foo)" }
     end
+
+    context "with ARRAY, ARGSCAT, ARGSPUSH" do
+      parse_by "obj.foo(a)" do
+        it { is_expected.to unparsed "obj.foo(a)" }
+      end
+      parse_by "obj.foo(a, b)" do
+        it { is_expected.to unparsed "obj.foo(a, b)" }
+      end
+      parse_by "obj.foo(a, *b)" do
+        it { is_expected.to unparsed "obj.foo(a, *b)" }
+        it { is_expected.to children_type_of :ARGSCAT, nth: 2 }
+      end
+      parse_by "obj.foo(*a, b)" do
+        it { is_expected.to unparsed "obj.foo(*a, b)" }
+        it { is_expected.to children_type_of :ARGSPUSH, nth: 2 }
+      end
+      parse_by "obj.foo(*a, *b)" do
+        it { is_expected.to unparsed "obj.foo(*a, *b)" }
+        it { is_expected.to children_type_of :ARGSCAT, nth: 2 }
+      end
+      parse_by "obj.foo(*a, b, c)" do
+        it { is_expected.to unparsed "obj.foo(*a, b, c)" }
+        it { is_expected.to children_type_of :ARGSCAT, nth: 2 }
+      end
+    end
+
+    context "with BLOCK_PASS" do
+      parse_by "obj.foo(a, b, &block)" do
+        it { is_expected.to unparsed "obj.foo(a, b, &block)" }
+        it { is_expected.to children_type_of :BLOCK_PASS, nth: 2 }
+      end
+      parse_by "obj.foo(*a, b, &block)" do
+        it { is_expected.to unparsed "obj.foo(*a, b, &block)" }
+        it { is_expected.to children_type_of :BLOCK_PASS, nth: 2 }
+      end
+      parse_by "obj.foo(a, *b, &block)" do
+        it { is_expected.to unparsed "obj.foo(a, *b, &block)" }
+        it { is_expected.to children_type_of :BLOCK_PASS, nth: 2 }
+      end
+      parse_by "obj.foo(*a, *b, &block)" do
+        it { is_expected.to unparsed "obj.foo(*a, *b, &block)" }
+        it { is_expected.to children_type_of :BLOCK_PASS, nth: 2 }
+      end
+    end
   end
 
   describe "NODE_OPCALL" do
@@ -1063,6 +1107,50 @@ RSpec.describe Rensei::Unparser do
     parse_by "self[:type]" do
       it { is_expected.to unparsed "self[:type]" }
     end
+
+    context "with ARRAY, ARGSCAT, ARGSPUSH" do
+      parse_by "foo(a)" do
+        it { is_expected.to unparsed "foo(a)" }
+      end
+      parse_by "foo(a, b)" do
+        it { is_expected.to unparsed "foo(a, b)" }
+      end
+      parse_by "foo(a, *b)" do
+        it { is_expected.to unparsed "foo(a, *b)" }
+        it { is_expected.to children_type_of :ARGSCAT, nth: 1 }
+      end
+      parse_by "foo(*a, b)" do
+        it { is_expected.to unparsed "foo(*a, b)" }
+        it { is_expected.to children_type_of :ARGSPUSH, nth: 1 }
+      end
+      parse_by "foo(*a, *b)" do
+        it { is_expected.to unparsed "foo(*a, *b)" }
+        it { is_expected.to children_type_of :ARGSCAT, nth: 1 }
+      end
+      parse_by "foo(*a, b, c)" do
+        it { is_expected.to unparsed "foo(*a, b, c)" }
+        it { is_expected.to children_type_of :ARGSCAT, nth: 1 }
+      end
+    end
+
+    context "with BLOCK_PASS" do
+      parse_by "foo(a, b, &block)" do
+        it { is_expected.to unparsed "foo(a, b, &block)" }
+        it { is_expected.to children_type_of :BLOCK_PASS, nth: 1 }
+      end
+      parse_by "foo(*a, b, &block)" do
+        it { is_expected.to unparsed "foo(*a, b, &block)" }
+        it { is_expected.to children_type_of :BLOCK_PASS, nth: 1 }
+      end
+      parse_by "foo(a, *b, &block)" do
+        it { is_expected.to unparsed "foo(a, *b, &block)" }
+        it { is_expected.to children_type_of :BLOCK_PASS, nth: 1 }
+      end
+      parse_by "foo(*a, *b, &block)" do
+        it { is_expected.to unparsed "foo(*a, *b, &block)" }
+        it { is_expected.to children_type_of :BLOCK_PASS, nth: 1 }
+      end
+    end
   end
 
   describe "NODE_VCALL" do
@@ -1086,6 +1174,54 @@ RSpec.describe Rensei::Unparser do
     parse_by "obj&.hoge(0, 1, 2)" do
       it { is_expected.to unparsed "obj&.hoge(0, 1, 2)" }
       it { is_expected.to type_of :QCALL }
+    end
+    parse_by "obj&.hoge(a, b, *c, *d)" do
+      it { is_expected.to unparsed "obj&.hoge(a, b, *c, *d)" }
+      it { is_expected.to type_of :QCALL }
+    end
+
+    context "with ARRAY, ARGSCAT, ARGSPUSH" do
+      parse_by "obj&.foo(a)" do
+        it { is_expected.to unparsed "obj&.foo(a)" }
+      end
+      parse_by "obj&.foo(a, b)" do
+        it { is_expected.to unparsed "obj&.foo(a, b)" }
+      end
+      parse_by "obj&.foo(a, *b)" do
+        it { is_expected.to unparsed "obj&.foo(a, *b)" }
+        it { is_expected.to children_type_of :ARGSCAT, nth: 2 }
+      end
+      parse_by "obj&.foo(*a, b)" do
+        it { is_expected.to unparsed "obj&.foo(*a, b)" }
+        it { is_expected.to children_type_of :ARGSPUSH, nth: 2 }
+      end
+      parse_by "obj&.foo(*a, *b)" do
+        it { is_expected.to unparsed "obj&.foo(*a, *b)" }
+        it { is_expected.to children_type_of :ARGSCAT, nth: 2 }
+      end
+      parse_by "obj&.foo(*a, b, c)" do
+        it { is_expected.to unparsed "obj&.foo(*a, b, c)" }
+        it { is_expected.to children_type_of :ARGSCAT, nth: 2 }
+      end
+    end
+
+    context "with BLOCK_PASS" do
+      parse_by "obj&.foo(a, b, &block)" do
+        it { is_expected.to unparsed "obj&.foo(a, b, &block)" }
+        it { is_expected.to children_type_of :BLOCK_PASS, nth: 2 }
+      end
+      parse_by "obj&.foo(*a, b, &block)" do
+        it { is_expected.to unparsed "obj&.foo(*a, b, &block)" }
+        it { is_expected.to children_type_of :BLOCK_PASS, nth: 2 }
+      end
+      parse_by "obj&.foo(a, *b, &block)" do
+        it { is_expected.to unparsed "obj&.foo(a, *b, &block)" }
+        it { is_expected.to children_type_of :BLOCK_PASS, nth: 2 }
+      end
+      parse_by "obj&.foo(*a, *b, &block)" do
+        it { is_expected.to unparsed "obj&.foo(*a, *b, &block)" }
+        it { is_expected.to children_type_of :BLOCK_PASS, nth: 2 }
+      end
     end
   end
 
@@ -1136,6 +1272,12 @@ RSpec.describe Rensei::Unparser do
     end
     parse_by "[func(1 + 2)]" do
       it { is_expected.to unparsed "[func((1 + 2))]" }
+    end
+    parse_by "[*[[a,b], c], d]" do
+      it { is_expected.to unparsed "[[a, b], c, d]" }
+    end
+    parse_by "[*[a], [b, c]]" do
+      it { is_expected.to unparsed "[a, [b, c]]" }
     end
   end
 
@@ -1526,20 +1668,90 @@ RSpec.describe Rensei::Unparser do
     parse_by 'foo(*ary, ary2, arg3, *arg4)' do
       it { is_expected.to unparsed 'foo(*ary, ary2, arg3, *arg4)' }
     end
-    xparse_by 'foo([a, *b])' do
-      it { is_expected.to unparsed 'foo([a], *b)' }
+    parse_by 'foo([a], [b], *z)' do
+      it { is_expected.to unparsed 'foo([a], [b], *z)' }
     end
-    xparse_by 'foo([a, *b, c])' do
-      it { is_expected.to unparsed 'foo([a], *b, c)' }
+    parse_by 'foo(*[a], [b], *z)' do
+      it { is_expected.to unparsed 'foo(a, [b], *z)' }
     end
-    xparse_by '[a, *b]'
-    xparse_by '[a, *b, c]'
+    parse_by 'foo(*a, [b], *z)' do
+      it { is_expected.to unparsed 'foo(*a, [b], *z)' }
+    end
+    parse_by 'foo(*[a, b], [c], *z)' do
+      it { is_expected.to unparsed 'foo(a, b, [c], *z)' }
+    end
+    parse_by 'foo([a, *b])' do
+      it { is_expected.to unparsed 'foo([a, *b])' }
+    end
+    parse_by 'foo([a, *b, c])' do
+      it { is_expected.to unparsed 'foo([a, *b, c])' }
+    end
+
+    describe "[]" do
+      parse_by '[a, *b]' do
+        it { is_expected.to unparsed '[a, *b]' }
+      end
+      parse_by '[a, *b, c]' do
+        it { is_expected.to unparsed '[a, *b, c]' }
+      end
+      parse_by '[*a, b, c, *d]' do
+        it { is_expected.to unparsed '[*a, b, c, *d]' }
+      end
+      parse_by '[*a, [b], *c]' do
+        it { is_expected.to unparsed '[*a, [b], *c]' }
+      end
+      parse_by '[[a, b], *c]' do
+        it { is_expected.to unparsed '[[a, b], *c]' }
+      end
+      parse_by '[[*a, b], *c]' do
+        it { is_expected.to unparsed '[[*a, b], *c]' }
+      end
+      parse_by '[a, *b]' do
+        it { is_expected.to unparsed '[a, *b]' }
+      end
+      parse_by '[a, b, *c]' do
+        it { is_expected.to unparsed '[a, b, *c]' }
+      end
+      parse_by '[*a, *b]' do
+        it { is_expected.to unparsed '[*a, *b]' }
+      end
+      parse_by '[*[a, b], *c]' do
+        it { is_expected.to unparsed '[*[a, b], *c]' }
+      end
+      parse_by '[*a, b, c]' do
+        it { is_expected.to unparsed '[*a, b, c]' }
+      end
+      parse_by '[*a, *[b, c]]' do
+        it { is_expected.to unparsed '[*a, b, c]' }
+      end
+    end
   end
 
   describe "NODE_ARGSPUSH" do
     parse_by 'foo(*ary, ary2)' do
       it { is_expected.to unparsed 'foo(*ary, ary2)' }
       it { is_expected.to satisfy { |node| node.children[1].type == :ARGSPUSH } }
+    end
+    parse_by '[*a, b]' do
+      it { is_expected.to unparsed '[*a, b]' }
+    end
+    parse_by '[*a, [b, c]]' do
+      it { is_expected.to unparsed '[*a, [b, c]]' }
+    end
+    parse_by '[*[a], [b, c]]' do
+      it { is_expected.to unparsed '[a, [b, c]]' }
+    end
+    parse_by '[a, b, *c, d]' do
+      it { is_expected.to unparsed '[a, b, *c, d]' }
+    end
+    parse_by '[*[a, b, c], [d, e], f]' do
+      it { is_expected.to unparsed '[a, b, c, [d, e], f]' }
+    end
+    parse_by '[*[a, b, c], [d, e], f]' do
+      it { is_expected.to unparsed '[a, b, c, [d, e], f]' }
+    end
+    parse_by '[*a, [b, c, b]]' do
+      it { is_expected.to unparsed '[*a, [b, c, b]]' }
     end
   end
 

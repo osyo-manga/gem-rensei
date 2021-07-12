@@ -564,7 +564,8 @@ module Rensei
       # example: obj.foo(1)
       def NODE_CALL(node, opt = {})
         node.children.then { |receiver, mid, args|
-          "#{unparse(receiver, opt)}.#{unparse(mid, opt)}(#{unparse(args, opt.merge(expand_ARRAY: true))})"
+          opt_flags = _expand_in_XXXCALL(args)
+          "#{unparse(receiver, opt)}.#{unparse(mid, opt)}(#{unparse(args, opt.merge(_expand_in_XXXCALL(args)))})"
         }
       end
 
@@ -582,16 +583,33 @@ module Rensei
         }
       end
 
+      def _expand_in_XXXCALL(node)
+        case node&.type
+        when :ARRAY, :LIST
+          opt_flags = { expand_ARRAY: true }
+        when :ARGSCAT
+          opt_flags = { expand_ARGSCAT: true }
+        when :ARGSPUSH
+          opt_flags = { expand_ARGSPUSH: true }
+        when :BLOCK_PASS
+          _expand_in_XXXCALL(node.children.first)
+        else
+          opt_flags = { expand_ARRAY: true }
+        end
+      end
+
       # function call
       # format: [nd_mid]([nd_args])
       # example: foo(1)
       def NODE_FCALL(node, opt = {})
         node.children.then { |mid, args|
+          opt_flags = _expand_in_XXXCALL(args)
+
           # Support `self[key]`
           if mid == :[]
-            "self[#{unparse(args, opt.merge(expand_ARRAY: true))}]"
+            "self[#{unparse(args, opt.merge(opt_flags))}]"
           else
-            "#{unparse(mid, opt)}(#{unparse(args, opt.merge(expand_ARRAY: true))})"
+            "#{unparse(mid, opt)}(#{unparse(args, opt.merge(opt_flags))})"
           end
         }
       end
@@ -608,7 +626,7 @@ module Rensei
       # example: obj&.foo(1)
       def NODE_QCALL(node, opt = {})
         node.children.then { |receiver, mid, args|
-          "#{unparse(receiver, opt)}&.#{unparse(mid, opt)}(#{unparse(args, opt.merge(expand_ARRAY: true))})"
+          "#{unparse(receiver, opt)}&.#{unparse(mid, opt)}(#{unparse(args, opt.merge(_expand_in_XXXCALL(args)))})"
         }
       end
 
@@ -897,10 +915,22 @@ module Rensei
       # example: foo(*ary, post_arg1, post_arg2)
       def NODE_ARGSCAT(node, opt = {})
         node.children.then { |head, body|
-          if body.type == :ARRAY
-            "#{unparse(head, opt)}, #{unparse(body, opt)}"
+          case head.type
+          when :ARRAY, :LIST
+            opt_flags = { expand_ARRAY: true, expand_ARGSCAT: true, expand_ARGSPUSH: false }
+          when :ARGSCAT
+            opt_flags = { expand_ARRAY: true, expand_ARGSCAT: true, expand_ARGSPUSH: false }
+          when :ARGSPUSH
+            opt_flags = { expand_ARRAY: false, expand_ARGSCAT: false, expand_ARGSPUSH: true }
           else
-            "#{unparse(head, opt)}, *#{unparse(body, opt)}"
+            opt_flags = {}
+          end
+
+          star = "*" unless %i(ARRAY LIST).include? body.type
+          if opt.delete(:expand_ARGSCAT)
+            "#{unparse(head, opt.merge(opt_flags))}, #{star}#{unparse(body, opt.merge(expand_ARRAY: true))}"
+          else
+            "[#{unparse(head, opt.merge(opt_flags))}, #{star}#{unparse(body, opt.merge(expand_ARRAY: true))}]"
           end
         }
       end
@@ -910,7 +940,22 @@ module Rensei
       # example: foo(*ary, post_arg)
       def NODE_ARGSPUSH(node, opt = {})
         node.children.then { |head, body|
-          "#{unparse(head, opt)}, #{unparse(body, opt)}"
+          case head.type
+          when :ARRAY, :LIST
+            opt_flags = { expand_ARRAY: true, expand_ARGSCAT: true, expand_ARGSPUSH: false }
+          when :ARGSCAT
+            opt_flags = { expand_ARRAY: false, expand_ARGSCAT: true, expand_ARGSPUSH: false }
+          when :ARGSPUSH
+            opt_flags = { expand_ARRAY: false, expand_ARGSCAT: false, expand_ARGSPUSH: true }
+          else
+            opt_flags = {}
+          end
+
+          if opt.delete(:expand_ARGSPUSH)
+            "#{unparse(head, opt.merge(opt_flags))}, #{unparse(body , opt)}"
+          else
+            "[#{unparse(head, opt.merge(opt_flags))}, #{unparse(body , opt)}]"
+          end
         }
       end
 
@@ -1384,19 +1429,6 @@ module Rensei
               #{unparse(body, opt)}
             #{next__}
             EOS
-          end
-        }
-      end
-
-      # splat argument following arguments
-      # format: ..(*[nd_head], [nd_body..])
-      # example: foo(*ary, post_arg1, post_arg2)
-      def NODE_ARGSCAT(node, opt = {})
-        node.children.then { |head, body|
-          if body.type == :LIST
-            "#{unparse(head, opt)}, #{unparse(body, opt)}"
-          else
-            "#{unparse(head, opt)}, *#{unparse(body, opt)}"
           end
         }
       end

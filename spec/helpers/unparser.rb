@@ -34,7 +34,7 @@ module UnparserHelper
     satisfy("be type `:#{node.type}`") { |node| node.type == type }
   end
 
-  def children_type_of(type)
-    satisfy("be type `:#{node.children.first.type}`") { |node| node.children.first.type == type }
+  def children_type_of(type, nth: 0)
+    satisfy("be type `:#{node.children[nth].type}`") { |node| node.children[nth].type == type }
   end
 end
