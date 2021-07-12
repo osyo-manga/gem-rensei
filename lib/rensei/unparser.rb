@@ -269,11 +269,15 @@ module Rensei
       def NODE_BEGIN(node, opt = {})
         return "" if node.children.first.nil?
         node.children.then { |body|
-          <<~EOS.chomp
-          begin
-            #{body.map(&_unparse(opt)).join("; ")}
+          if opt.delete(:pattern_match_BEGIN)
+            "^(#{body.map(&_unparse(opt)).join("; ")})"
+          else
+            <<~EOS.chomp
+            begin
+              #{body.map(&_unparse(opt)).join("; ")}
+            end
+            EOS
           end
-          EOS
         }
       end
 
@@ -1444,7 +1448,7 @@ module Rensei
           # e.g. in Array[a, b]
           pconst_ = unparse(pconst, opt) if pconst
 
-          opt_flags = { expand_ARRAY: true, expand_HASH: true, pattern_match_OR: true, pattern_match_LVAR: true }
+          opt_flags = { expand_ARRAY: true, expand_HASH: true, pattern_match_OR: true, pattern_match_LVAR: true, pattern_match_BEGIN: true }
           pre_ = unparse(pre, opt.merge(opt_flags))
           if rest == :NODE_SPECIAL_NO_NAME_REST
             rest_ = "*"
@@ -1461,7 +1465,7 @@ module Rensei
       def NODE_HSHPTN(node, opt = {})
         node.children.then { |pconst, pkwargs, pkwrestarg|
 
-          opt_flags = { expand_ARRAY: true, expand_HASH: true, pattern_match_OR: true, pattern_match_LVAR: true }
+          opt_flags = { expand_ARRAY: true, expand_HASH: true, pattern_match_OR: true, pattern_match_LVAR: true, pattern_match_BEGIN: true }
 
           pkwargs_ = unparse(pkwargs, opt.merge(opt_flags))
 

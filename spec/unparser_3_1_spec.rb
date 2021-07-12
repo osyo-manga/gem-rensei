@@ -55,4 +55,52 @@ RSpec.describe Rensei::Unparser::Ruby3_1_0, ruby_version: "3.1.0"... do
       it { is_expected.to type_of :DEFS }
     end
   end
+
+  describe "NODE_ARYPTN" do
+    parse_by(<<~'EOS') do
+        case value
+        in [^(a)]
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin [^(a)]\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in [^(a + b)]
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin [^((a + b))]\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in [^(proc { a; b })]
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin [^(proc() { begin a; b; end })]\n  \n\nend" }
+    end
+  end
+
+  describe "NODE_HSHPTN" do
+    parse_by(<<~'EOS') do
+        case value
+        in { a: ^(a) }
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin { a: ^(a) }\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in { a: ^(a + b) }
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin { a: ^((a + b)) }\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in { a: ^(proc { a; b }) }
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin { a: ^(proc() { begin a; b; end }) }\n  \n\nend" }
+    end
+  end
 end
