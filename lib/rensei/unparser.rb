@@ -1409,23 +1409,24 @@ module Rensei
 
       def NODE_IN(node, opt = {})
         node.children.then { |head, body, next_|
+          in_ = opt.delete(:without_in) ? "" : "in "
           next__ = next_&.type == :IN || next_.nil? ? unparse(next_, opt) : "else\n  #{unparse(next_, opt)}"
           case head.type
           when :IF
             <<~EOS.chomp
-            in #{unparse(head.children[1], opt.merge(expand_ARRAY: true))} if #{unparse(head.children[0], opt)}
+            #{in_}#{unparse(head.children[1], opt.merge(expand_ARRAY: true))} if #{unparse(head.children[0], opt)}
               #{unparse(body, opt)}
             #{next__}
             EOS
           when :UNLESS
             <<~EOS.chomp
-            in #{unparse(head.children[1], opt.merge(expand_ARRAY: true))} unless #{unparse(head.children[0], opt)}
+            #{in_}#{unparse(head.children[1], opt.merge(expand_ARRAY: true))} unless #{unparse(head.children[0], opt)}
               #{unparse(body, opt)}
             #{next__}
             EOS
           else
             <<~EOS.chomp
-            in #{unparse(head, opt.merge(expand_ARRAY: true))}
+            #{in_}#{unparse(head, opt.merge(expand_ARRAY: true))}
               #{unparse(body, opt)}
             #{next__}
             EOS
@@ -1504,6 +1505,20 @@ module Rensei
           # Add support `"foo#{ "hoge" }baz"`
           if lit.nil? && suffix.nil?
             "\"\#{#{prefix.dump}\}\""
+          else
+            super
+          end
+        }
+      end
+
+      # case statement (pattern matching)
+      # format: case [nd_head]; [nd_body]; end
+      # example: case x; in 1; foo; in 2; bar; else baz; end
+      def NODE_CASE3(node, opt = {})
+        node.children.then { |head, body, else_|
+          # Add super `42 => result`
+          if body.children[1].nil?
+            "#{unparse(head, opt)} => #{unparse(body, opt.merge(without_in: true))}"
           else
             super
           end
