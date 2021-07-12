@@ -1524,6 +1524,40 @@ module Rensei
           end
         }
       end
+
+      # method definition
+      # format: def [nd_mid] [nd_defn]; end
+      # example: def foo; bar; end
+      def NODE_DEFN(node, opt = {})
+        node.children.then { |mid, defn|
+          # Add support `def hoge = 42`
+          if defn.children[1].nil?
+            info = unparse_NODE_SCOPE(defn, opt)
+            "def #{mid} = #{info[:body]}"
+          else
+            super
+          end
+        }
+      end
+
+      # singleton method definition
+      # format: def [nd_recv].[nd_mid] [nd_defn]; end
+      # example: def obj.foo; bar; end
+      def NODE_DEFS(node, opt = {})
+        node.children.then { |recv, mid, defn|
+          # Add support `def obj.hoge = 42`
+          if defn.children[1].nil?
+            info = unparse_NODE_SCOPE(defn, opt)
+            "def #{unparse(recv, opt)}.#{mid} = #{info[:body]}"
+          else
+            super
+          end
+        }
+      end
+    end
+
+    module Ruby3_1_0
+      include Ruby3_0_0
     end
 
     case RUBY_VERSION
@@ -1533,8 +1567,10 @@ module Rensei
       VERSION = Ruby2_7_0
     when ("2.7.2"..."3.0.0")
       VERSION = Ruby2_7_2
-    when ("3.0.0"...)
+    when ("3.0.0"..."3.1.0")
       VERSION = Ruby3_0_0
+    when ("3.1.0"...)
+      VERSION = Ruby3_1_0
     else
       railse "Not implemented Ruby version #{RUBY_VERSION}"
     end

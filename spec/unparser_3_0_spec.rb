@@ -11,9 +11,32 @@ RSpec.describe Rensei::Unparser::Ruby3_0_0, ruby_version: "3.0.0"... do
   subject { node }
 
   describe "NODE_DEFN" do
-    parse_by "def hoge = 42" do
+    parse_by "def hoge = 42", ruby_version: "3.0.0"..."3.1.0" do
+      it { is_expected.to unparsed "def hoge = 42" }
+      it { is_expected.to type_of :DEFN }
+    end
+    parse_by "def hoge() = 42" do
       it { is_expected.to unparsed "def hoge()\n  42\nend" }
       it { is_expected.to type_of :DEFN }
+    end
+    parse_by "def hoge(a) = 42" do
+      it { is_expected.to unparsed "def hoge(a)\n  42\nend" }
+      it { is_expected.to type_of :DEFN }
+    end
+  end
+
+  describe "NODE_DEFS" do
+    parse_by "def obj.hoge = 42", ruby_version: "3.0.0"..."3.1.0" do
+      it { is_expected.to unparsed "def obj.hoge = 42" }
+      it { is_expected.to type_of :DEFS }
+    end
+    parse_by "def obj.hoge() = 42" do
+      it { is_expected.to unparsed "def obj.hoge()\n  42\nend" }
+      it { is_expected.to type_of :DEFS }
+    end
+    parse_by "def obj.hoge(a) = 42" do
+      it { is_expected.to unparsed "def obj.hoge(a)\n  42\nend" }
+      it { is_expected.to type_of :DEFS }
     end
   end
 
