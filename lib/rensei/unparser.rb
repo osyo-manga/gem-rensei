@@ -1303,7 +1303,6 @@ module Rensei
         node.children.then { |tbl, args, body|
           break { args: "", body: unparse(body, opt) } if args.nil?
 
-  #         info = unparse_NODE_ARGS(args, opt)
           info = unparse_NODE_ARGS(args, opt.merge(_NODE_MASGN: true))
 
           # Support proc { |**| }
