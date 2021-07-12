@@ -1535,6 +1535,33 @@ module Rensei
         }
       end
 
+      # find pattern
+      # format: [nd_pconst](*[pre_rest_arg], args, ..., *[post_rest_arg])
+      def NODE_FNDPTN(node, opt = {})
+        node.children.then { |pconst, pre, rest, post|
+          # e.g. in Array[a, b]
+          pconst_ = unparse(pconst, opt) if pconst
+
+          opt_flags = { expand_ARRAY: true, expand_HASH: true, pattern_match_OR: true, pattern_match_LVAR: true }
+
+          if pre == :NODE_SPECIAL_NO_NAME_REST
+            pre_ = "*"
+          elsif pre
+            pre_ = "*#{unparse(pre, opt.merge(opt_flags))}"
+          end
+
+          rest_ = unparse(rest, opt.merge(opt_flags))
+
+          if post == :NODE_SPECIAL_NO_NAME_REST
+            post_ = "*"
+          elsif post
+            post_ = "*#{unparse(post, opt.merge(opt_flags))}"
+          end
+
+          "#{pconst_}[#{[pre_, rest_, post_].compact.join(", ")}]"
+        }
+      end
+
       # method definition
       # format: def [nd_mid] [nd_defn]; end
       # example: def foo; bar; end

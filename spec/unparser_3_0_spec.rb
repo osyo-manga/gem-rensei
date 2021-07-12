@@ -73,4 +73,49 @@ RSpec.describe Rensei::Unparser::Ruby3_0_0, ruby_version: "3.0.0"... do
       it { is_expected.to type_of :CASE3 }
     end
   end
+
+  describe "NODE_FNDPTN" do
+    parse_by(<<~'EOS') do
+        case value
+        in [*pre, Integer, *post]
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin [*pre, Integer, *post]\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in [*pre, Integer, String, *post]
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin [*pre, Integer, String, *post]\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in [*, Integer, *post]
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin [*, Integer, *post]\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in [*pre, Integer, *]
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin [*pre, Integer, *]\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in Array[*pre, Integer, *]
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin Array[*pre, Integer, *]\n  \n\nend" }
+    end
+    parse_by(<<~'EOS') do
+        case value
+        in [*pre, Integer => a, *post]
+        end
+      EOS
+      it { is_expected.to unparsed "case value\nin [*pre, Integer => a, *post]\n  \n\nend" }
+    end
+  end
 end

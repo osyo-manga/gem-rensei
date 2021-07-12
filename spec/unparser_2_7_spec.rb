@@ -136,6 +136,21 @@ RSpec.describe Rensei::Unparser::Ruby2_7_0, ruby_version: "2.7.0"... do
           EOS
           it { is_expected.to unparsed "case value\nin [Integer, String, *hoge, Integer, String]\n  hoge\n\nend" }
         end
+        parse_by(<<~'EOS') do
+            case value
+            in [Integer, *hoge]
+            end
+          EOS
+          it { is_expected.to unparsed "case value\nin [Integer, *hoge]\n  \n\nend" }
+        end
+        parse_by(<<~'EOS') do
+            case value
+            in [*hoge, Integer]
+              hoge
+            end
+          EOS
+          it { is_expected.to unparsed "case value\nin [*hoge, Integer]\n  hoge\n\nend" }
+        end
       end
 
       context "no name rest" do
