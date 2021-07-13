@@ -2143,11 +2143,11 @@ RSpec.describe Rensei::Unparser do
 
   describe "NODE_ATTRASGN" do
     parse_by "struct.field = foo" do
-      it { is_expected.to unparsed "struct.field=foo" }
+      it { is_expected.to unparsed "struct.field=(foo)" }
       it { is_expected.to type_of :ATTRASGN }
     end
     parse_by "struct.field = 1, 2, 3" do
-      it { is_expected.to unparsed "struct.field=[1, 2, 3]" }
+      it { is_expected.to unparsed "struct.field=([1, 2, 3])" }
     end
     parse_by "struct[field] = foo" do
       it { is_expected.to unparsed "struct[field] = foo" }
@@ -2157,6 +2157,12 @@ RSpec.describe Rensei::Unparser do
     end
     parse_by "struct[a] = b, c" do
       it { is_expected.to unparsed "struct[a] = b, c" }
+    end
+    parse_by "a = hoge.foo=(), b" do
+      it { is_expected.to unparsed "(a = [hoge.foo=(), b])" }
+    end
+    parse_by "a = b, hoge.foo=()" do
+      it { is_expected.to unparsed "(a = [b, hoge.foo=()])" }
     end
   end
 

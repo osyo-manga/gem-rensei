@@ -1195,7 +1195,7 @@ module Rensei
             *args_, right, _ = args.children
             "#{unparse(recv, opt)}[#{args_.map(&_unparse(opt.merge(expand_ARRAY: true))).join(", ")}] = #{unparse(right, opt.merge(expand_ARRAY: true))}"
           else
-            "#{unparse(recv, opt)}.#{mid}#{unparse(args, opt.merge(expand_ARRAY: true))}"
+            "#{unparse(recv, opt)}.#{mid}(#{unparse(args, opt.merge(expand_ARRAY: true))})"
           end
         }
       end
