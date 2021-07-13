@@ -759,6 +759,15 @@ RSpec.describe Rensei::Unparser do
     parse_by "1.times { x = foo and hoge }" do
       it { is_expected.to unparsed "1.times() { ((x = foo) && hoge) }" }
     end
+    parse_by <<~EOS do
+      hoge do
+        hoge
+      rescue => e
+        foo
+      end
+    EOS
+      it { is_expected.to unparsed("hoge() { begin\n  hoge\nrescue  => e; foo\nend }") }
+    end
   end
 
   describe "NODE_IASGN" do

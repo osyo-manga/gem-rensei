@@ -446,6 +446,8 @@ module Rensei
             "#{vid}"
           elsif opt.delete(:expand_DASGN_CURR)
             "#{vid} = #{unparse(value, opt)}"
+          elsif value.type == :ERRINFO
+            "=> #{vid}"
           else
             "(#{vid} = #{unparse(value, opt)})"
           end
