@@ -300,16 +300,16 @@ module Rensei
       # example: begin; foo; rescue; bar; else; baz; end
       def NODE_RESBODY(node, opt = {})
         node.children.then { |args, body|
-          args_ = args&.then { |it| unparse(it, opt.merge(expand_ARRAY: true)) + ";" }
+          args_ = args&.then { |it| unparse(it, opt.merge(expand_ARRAY: true)) }
           if body.type == :BLOCK
             if body.children.first&.children[1]&.type == :ERRINFO
-              "rescue #{args_}#{unparse(body, opt.merge(without_BEGIN: true))}"
+              "rescue #{args_} #{unparse(body, opt.merge(without_BEGIN: true))}"
             else
-              "rescue #{args_ || ";"}#{unparse(body, opt)}"
+              "rescue #{args_}; #{unparse(body, opt)}"
             end
           else
             # MEMO: Support by `begin; foo; rescue; bar; else; baz; end`
-            "rescue #{args_ || ";"} #{unparse(body, opt)}"
+            "rescue #{args_}; #{unparse(body, opt)}"
           end
         }
       end

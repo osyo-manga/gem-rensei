@@ -367,7 +367,7 @@ RSpec.describe Rensei::Unparser do
       it { is_expected.to unparsed(<<~EOS.chomp) }
         begin
           begin; foo; hoge; end
-        rescue ;begin bar; piyo; end
+        rescue ; begin bar; piyo; end
         else
           begin; baz; foo; end
         end
@@ -396,7 +396,7 @@ RSpec.describe Rensei::Unparser do
       it { is_expected.to unparsed(<<~EOS.chomp) }
         begin
           begin; foo; end
-        rescue => e; bar
+        rescue  => e; bar
         else
           begin; baz; end
         end
@@ -406,7 +406,7 @@ RSpec.describe Rensei::Unparser do
       it { is_expected.to unparsed(<<~EOS.chomp) }
         begin
           begin; foo; end
-        rescue => e; ; hoge; bar
+        rescue  => e; ; hoge; bar
         end
       EOS
     end
@@ -451,12 +451,7 @@ RSpec.describe Rensei::Unparser do
         bar
       end
     EOS
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        begin
-          foo
-        rescue ; bar
-        end
-      EOS
+      it { is_expected.to unparsed("begin\n  foo\nrescue ; bar\nend") }
     end
     parse_by <<~EOS do
       begin
@@ -466,12 +461,7 @@ RSpec.describe Rensei::Unparser do
         hoge
       end
     EOS
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        begin
-          foo
-        rescue ;begin bar; hoge; end
-        end
-      EOS
+      it { is_expected.to unparsed("begin\n  foo\nrescue ; begin bar; hoge; end\nend") }
     end
     parse_by <<~EOS do
       begin
@@ -481,12 +471,7 @@ RSpec.describe Rensei::Unparser do
         hoge
       end
     EOS
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        begin
-          foo
-        rescue e;begin bar; hoge; end
-        end
-      EOS
+      it { is_expected.to unparsed("begin\n  foo\nrescue e; begin bar; hoge; end\nend") }
     end
     parse_by <<~EOS do
       begin
@@ -496,12 +481,7 @@ RSpec.describe Rensei::Unparser do
         hoge
       end
     EOS
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        begin
-          foo
-        rescue e1, e2;begin bar; hoge; end
-        end
-      EOS
+      it { is_expected.to unparsed("begin\n  foo\nrescue e1, e2; begin bar; hoge; end\nend") }
     end
     parse_by <<~EOS do
       begin
@@ -510,12 +490,7 @@ RSpec.describe Rensei::Unparser do
         bar
       end
     EOS
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        begin
-          foo
-        rescue e; bar
-        end
-      EOS
+      it { is_expected.to unparsed("begin\n  foo\nrescue e; bar\nend") }
     end
     parse_by <<~EOS do
       begin
@@ -524,12 +499,25 @@ RSpec.describe Rensei::Unparser do
         bar
       end
     EOS
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        begin
-          foo
-        rescue => e; bar
-        end
-      EOS
+      it { is_expected.to unparsed("begin\n  foo\nrescue  => e; bar\nend") }
+    end
+    parse_by <<~EOS do
+      begin
+        foo
+      rescue Error
+        bar
+      end
+    EOS
+      it { is_expected.to unparsed("begin\n  foo\nrescue Error; bar\nend") }
+    end
+    parse_by <<~EOS do
+      begin
+        foo
+      rescue Error => e
+        bar
+      end
+    EOS
+      it { is_expected.to unparsed("begin\n  foo\nrescue Error => e; bar\nend") }
     end
   end
 
@@ -549,7 +537,7 @@ RSpec.describe Rensei::Unparser do
         begin
           begin
           begin; foo; end
-        rescue => e; bar
+        rescue  => e; bar
         end
         ensure
           begin; baz; end
