@@ -1343,6 +1343,12 @@ RSpec.describe Rensei::Unparser do
     parse_by "foo(**hoge.bar)" do
       it { is_expected.to unparsed "foo(**hoge.bar())" }
     end
+    parse_by "foo(key: 1, **opt)" do
+      it { is_expected.to unparsed "foo({ key: 1, **opt })" }
+    end
+    parse_by "foo(a, *b, key: 1, **opt)" do
+      it { is_expected.to unparsed "foo(a, *b, { key: 1, **opt })" }
+    end
   end
 
   describe "NODE_YIELD" do

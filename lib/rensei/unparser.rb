@@ -693,7 +693,9 @@ module Rensei
             "**#{unparse(head.children[1], opt)}"
           else
             result = (head).children[0..-2].each_slice(2).map { |key, value|
-              if key.type == :LIT && Symbol === key.children.first
+              if key.nil?
+                "**#{unparse(value, opt)}"
+              elsif key.type == :LIT && Symbol === key.children.first
                 "#{key.children.first}: #{unparse(value, opt)}"
               else
                 "#{unparse(key, opt)} => #{unparse(value, opt)}"
