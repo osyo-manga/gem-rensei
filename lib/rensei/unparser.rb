@@ -367,12 +367,12 @@ module Rensei
 
           # Support: (a,) = value
           if _right&.empty?
-            _left = unparse(left, opt.merge(expand_ARRAY: true)) || "*"
+            _left = unparse(left, opt.merge(expand_ARRAY: true, ignore_equal_NODE_ATTRASGN: true)) || "*"
           elsif left
             if node_masgn && left.children.count <= 2
-              _left = left.children.map(&_unparse(opt.merge(expand_ARRAY: true))).first
+              _left = left.children.map(&_unparse(opt.merge(expand_ARRAY: true, ignore_equal_NODE_ATTRASGN: true))).first
             else
-              _left = left.children.map(&_unparse(opt.merge(expand_ARRAY: true))).join(", ")
+              _left = left.children.map(&_unparse(opt.merge(expand_ARRAY: true, ignore_equal_NODE_ATTRASGN: true))).join(", ")
             end
           end
 
@@ -1191,7 +1191,9 @@ module Rensei
       # example: struct.field = foo
       def NODE_ATTRASGN(node, opt = {})
         node.children.then { |recv, mid, args|
-          if mid == :[]=
+          if opt.delete(:ignore_equal_NODE_ATTRASGN)
+            "#{unparse(recv, opt)}.#{mid.to_s.delete_suffix("=")}"
+          elsif mid == :[]=
             *args_, right, _ = args.children
             "#{unparse(recv, opt)}[#{args_.map(&_unparse(opt.merge(expand_ARRAY: true))).join(", ")}] = #{unparse(right, opt.merge(expand_ARRAY: true))}"
           else

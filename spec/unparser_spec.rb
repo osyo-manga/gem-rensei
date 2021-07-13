@@ -685,7 +685,18 @@ RSpec.describe Rensei::Unparser do
     parse_by "((a, b), c) = foo" do
       it { is_expected.to unparsed "((a, b, ), c, ) = foo" }
     end
-    xparse_by "a, *b, c = foo"
+    parse_by "a, *b, c = foo" do
+      it { is_expected.to unparsed "(a, *b, c) = foo" }
+    end
+    parse_by "a, self.b = c, d" do
+      it { is_expected.to unparsed "(a, self.b, ) = [c, d]" }
+    end
+    parse_by "hoge.a, self.b = c, d" do
+      it { is_expected.to unparsed "(hoge.a, self.b, ) = [c, d]" }
+    end
+    parse_by "hoge.a, self.b = c.foo, d.bar=()" do
+      it { is_expected.to unparsed "(hoge.a, self.b, ) = [c.foo(), d.bar=()]" }
+    end
 
     context "block arguments" do
       parse_by "proc { |(a)| }" do
