@@ -24,41 +24,17 @@ RSpec.describe Rensei::Unparser do
 
   describe "NODE_IF" do
     parse_by "if x == 1 then hoge end" do
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        if (x == 1)
-          hoge
-        end
-      EOS
+      it { is_expected.to unparsed("(if (x == 1)\n  hoge\nend)") }
       it { is_expected.to type_of :IF }
     end
     parse_by "if x == 1 then hoge else foo end" do
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        if (x == 1)
-          hoge
-        else
-          foo
-        end
-      EOS
+      it { is_expected.to unparsed("(if (x == 1)\n  hoge\nelse\n  foo\nend)") }
     end
     parse_by "if cond then hoge elsif cond2 then foo else bar end" do
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        if cond
-          hoge
-        else
-          if cond2
-          foo
-        else
-          bar
-        end
-        end
-      EOS
+      it { is_expected.to unparsed("(if cond\n  hoge\nelse\n  (if cond2\n  foo\nelse\n  bar\nend)\nend)") }
     end
     parse_by "hoge if x == 1" do
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        if (x == 1)
-          hoge
-        end
-      EOS
+      it { is_expected.to unparsed("(if (x == 1)\n  hoge\nend)") }
     end
 
     # Not support
@@ -69,32 +45,38 @@ RSpec.describe Rensei::Unparser do
         end
       EOS
     end
+    parse_by(<<~'EOS') do
+        begin
+          if foo
+            return a ? b : c
+          end
+          hoge
+        end
+      EOS
+      it { is_expected.to unparsed "begin (if foo\n  (return (if a\n  b\nelse\n  c\nend))\nend); hoge; end" }
+    end
   end
 
   describe "NODE_UNLESS" do
     parse_by "unless x == 1 then hoge end" do
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        unless (x == 1)
-          hoge
-        end
-      EOS
+      it { is_expected.to unparsed("(unless (x == 1)\n  hoge\nend)") }
       it { is_expected.to type_of :UNLESS }
     end
     parse_by "unless x == 1 then hoge else foo end" do
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        unless (x == 1)
-          hoge
-        else
-          foo
-        end
-      EOS
+      it { is_expected.to unparsed("(unless (x == 1)\n  hoge\nelse\n  foo\nend)") }
     end
     parse_by "hoge unless x == 1" do
-      it { is_expected.to unparsed(<<~EOS.chomp) }
-        unless (x == 1)
+      it { is_expected.to unparsed("(unless (x == 1)\n  hoge\nend)") }
+    end
+    parse_by(<<~'EOS') do
+        begin
+          unless foo
+            return a ? b : c
+          end
           hoge
         end
       EOS
+      it { is_expected.to unparsed "begin (unless foo\n  (return (if a\n  b\nelse\n  c\nend))\nend); hoge; end" }
     end
   end
 
@@ -1466,9 +1448,9 @@ RSpec.describe Rensei::Unparser do
     # warning: (none):1: warning: regex literal in condition
     parse_by "if /foo/ then foo end" do
       it { is_expected.to unparsed(<<~EOS.chomp) }
-        if /foo/
+        (if /foo/
           foo
-        end
+        end)
       EOS
     end
   end
@@ -2084,9 +2066,9 @@ RSpec.describe Rensei::Unparser do
   describe "NODE_FLIP2" do
     parse_by "if (x==1)..(x==5); foo; end" do
       it { is_expected.to unparsed(<<~EOS.chomp) }
-        if ((x == 1))..((x == 5))
+        (if ((x == 1))..((x == 5))
           foo
-        end
+        end)
       EOS
       it { is_expected.to children_type_of :FLIP2 }
     end
@@ -2095,9 +2077,9 @@ RSpec.describe Rensei::Unparser do
   describe "NODE_FLIP3" do
     parse_by "if (x==1)...(x==5); foo; end" do
       it { is_expected.to unparsed(<<~EOS.chomp) }
-        if ((x == 1))...((x == 5))
+        (if ((x == 1))...((x == 5))
           foo
-        end
+        end)
       EOS
       it { is_expected.to children_type_of :FLIP3 }
     end
@@ -2495,9 +2477,9 @@ RSpec.describe Rensei::Unparser do
     end
     parse_by "if x = foo then hoge end" do
       it { is_expected.to unparsed(<<~EOS.chomp) }
-        if (x = foo)
+        (if (x = foo)
           hoge
-        end
+        end)
       EOS
     end
     parse_by "hoge += foo" do

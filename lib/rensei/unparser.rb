@@ -85,9 +85,9 @@ module Rensei
       def NODE_IF(node, opt = {})
         node.children.then { |cond, body, else_|
           <<~EOS.chomp
-            if #{unparse(cond, opt)}
+            (if #{unparse(cond, opt)}
               #{unparse(body, opt)}#{else_ ? "\nelse\n  #{unparse(else_, opt)}" : ""}
-            end
+            end)
           EOS
         }
       end
@@ -98,9 +98,9 @@ module Rensei
       def NODE_UNLESS(node, opt = {})
         node.children.then { |cond, body, else_|
           <<~EOS.chomp
-            unless #{unparse(cond, opt)}
+            (unless #{unparse(cond, opt)}
               #{unparse(body, opt)}#{else_ ? "\nelse\n  #{unparse(else_, opt)}" : ""}
-            end
+            end)
           EOS
         }
       end
