@@ -1518,6 +1518,12 @@ RSpec.describe Rensei::Unparser do
     parse_by '"\""' do
       it { is_expected.to unparsed '"\""' }
     end
+    parse_by "'にゃーん'" do
+      it { is_expected.to unparsed "\"にゃーん\"" }
+    end
+    parse_by %q('\n\u306B\u3083\u30FC\u3093にゃーん') do
+      it { is_expected.to unparsed "\"\\\\n\\\\u306B\\\\u3083\\\\u30FC\\\\u3093にゃーん\"" }
+    end
   end
 
   describe "NODE_XSTR" do
@@ -1585,6 +1591,9 @@ RSpec.describe Rensei::Unparser do
     end
     parse_by %q("#{ bar }#{ foo + "a" }'a'") do
       it { is_expected.to unparsed %q("#{bar}#{(foo + "a")}'a'") }
+    end
+    parse_by '"にゃーん#{ bar }にゃーん"' do
+      it { is_expected.to unparsed "\"にゃーん\#{bar}にゃーん\"" }
     end
   end
 

@@ -33,7 +33,7 @@ module Rensei
         end
 
         def escape
-          dump[1..-2]
+          inspect[1..-2]
         end
       end
     }
@@ -836,11 +836,10 @@ module Rensei
       # format: [nd_lit]
       # example: 'foo'
       def NODE_STR(node, opt = {})
-        node.children.first.dump
         if opt.delete(:ignore_quote_STR)
           node.children.first.to_s.escape
         else
-          node.children.first.dump
+          node.children.first.inspect
         end
       end
 
