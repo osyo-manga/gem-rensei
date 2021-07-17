@@ -1626,8 +1626,8 @@ module Rensei
       include VERSION
     end
 
-    def self.unparse(node)
-      Caller.new.unparse(node)
+    def self.unparse(node, opt = {})
+      Caller.new.unparse(node, opt)
     end
   end
 end
