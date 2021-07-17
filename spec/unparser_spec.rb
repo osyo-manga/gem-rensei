@@ -1521,6 +1521,9 @@ RSpec.describe Rensei::Unparser do
     parse_by "'にゃーん'" do
       it { is_expected.to unparsed "\"にゃーん\"" }
     end
+    parse_by "'𩸽'" do
+      it { is_expected.to unparsed "\"𩸽\"" }
+    end
     parse_by %q('\n\u306B\u3083\u30FC\u3093にゃーん') do
       it { is_expected.to unparsed "\"\\\\n\\\\u306B\\\\u3083\\\\u30FC\\\\u3093にゃーん\"" }
     end
