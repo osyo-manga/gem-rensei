@@ -248,7 +248,7 @@ RSpec.describe Rensei::Unparser::Ruby2_7_0, ruby_version: "2.7.0"... do
           in [^expr, [^expr], ^expr]
           end
         EOS
-        it { is_expected.to unparsed "begin (expr = 18); case value\nin [^expr, [^expr], ^expr]\n  \n\nend; end" }
+        it { is_expected.to unparsed "begin (expr = 18); case value\nin [^expr, [^expr], ^expr]\n  begin  end\n\nend; end" }
       end
     end
   end
@@ -368,7 +368,7 @@ RSpec.describe Rensei::Unparser::Ruby2_7_0, ruby_version: "2.7.0"... do
           in { a: ^expr, b: { c: ^expr } }
           end
         EOS
-        it { is_expected.to unparsed "begin (expr = 18); case value\nin { a: ^expr, b: { c: ^expr } }\n  \n\nend; end" }
+        it { is_expected.to unparsed "begin (expr = 18); case value\nin { a: ^expr, b: { c: ^expr } }\n  begin  end\n\nend; end" }
       end
     end
   end

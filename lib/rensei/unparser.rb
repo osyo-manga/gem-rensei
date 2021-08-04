@@ -60,20 +60,28 @@ module Rensei
       # example: foo; bar
       def NODE_BLOCK(node, opt = {})
         node.children.then { |head, *nexts|
-          if head&.type == :BEGIN && opt[:without_BEGIN]
-            nexts.map(&_unparse(opt.except(:without_BEGIN))).join("; ")
-          elsif opt[:without_BEGIN]
-            [head, *nexts].map(&_unparse(opt.except(:without_BEGIN))).join("; ")
-          # Support by BEGIN { foo }
-          elsif nexts&.first&.type == :BEGIN
-            "BEGIN { #{unparse(head.children.first, opt)} }"
+          if without_BEGIN = opt.fetch(:without_BEGIN, false)
+            begin_ = proc { |str, _| str }
+          else
+            begin_ = proc { |str, semicolon|
+              if semicolon
+                "begin; #{str}; end"
+              else
+                "begin #{str}; end"
+              end
+            }
+          end
+          opt.merge!(within_BEGIN: !without_BEGIN)
+          opt.delete(:without_BEGIN)
+          if head.type == :BEGIN && head.children == [nil]
+            begin_.(nexts.map(&_unparse(opt)).join("; "), true)
           elsif head.type == :BEGIN
-            "begin; #{nexts.map(&_unparse(opt)).join("; ")}; end"
+            "BEGIN { #{unparse(head, opt)} }; #{nexts.drop(1).map(&_unparse(opt)).join("; ")}"
           else
             if nexts.empty?
               "#{unparse(head, opt)};"
             else
-              "begin #{[head, *nexts].map(&_unparse(opt)).join("; ")}; end"
+              begin_.([head, *nexts].map(&_unparse(opt)).join("; "), false)
             end
           end
         }
@@ -267,10 +275,15 @@ module Rensei
       # format: begin; [nd_body]; end
       # example: begin; 1; end
       def NODE_BEGIN(node, opt = {})
-        return "" if node.children.first.nil?
         node.children.then { |body|
           if opt.delete(:pattern_match_BEGIN)
             "^(#{body.map(&_unparse(opt)).join("; ")})"
+          elsif opt.delete(:without_BEGIN)
+            "#{body.map(&_unparse(opt)).join("; ")}"
+          elsif opt.delete(:within_BEGIN)
+            "begin #{body.map(&_unparse(opt)).join("; ")} end"
+          elsif body == [nil]
+            ""
           else
             <<~EOS.chomp
             begin

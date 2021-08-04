@@ -15,10 +15,58 @@ RSpec.describe Rensei::Unparser do
       it { is_expected.to unparsed "begin hoge; foo; end" }
       it { is_expected.to type_of :BLOCK }
     end
-
     parse_by "hoge\nfoo" do
       it { is_expected.to unparsed "begin hoge; foo; end" }
       it { is_expected.to type_of :BLOCK }
+    end
+    parse_by "begin; end; begin; end" do
+      it { is_expected.to unparsed "begin; begin  end; end" }
+    end
+    parse_by "begin; foo end; begin; end" do
+      it { is_expected.to unparsed "begin; foo; begin  end; end" }
+    end
+    parse_by "begin; end; begin; foo end" do
+      it { is_expected.to unparsed "begin; begin  end; foo; end" }
+    end
+    parse_by "BEGIN {}; begin; end" do
+      it { is_expected.to unparsed "BEGIN { begin  end }; begin  end" }
+    end
+    parse_by "BEGIN { foo; }; begin; end" do
+      it { is_expected.to unparsed "BEGIN { begin foo end }; begin  end" }
+    end
+    parse_by "BEGIN { foo; bar }; hoge; foo" do
+      it { is_expected.to unparsed "BEGIN { begin begin foo; bar; end end }; hoge; foo" }
+    end
+    parse_by "BEGIN { begin; end; begin; end }; begin; end" do
+      it { is_expected.to unparsed "BEGIN { begin begin; begin  end; end end }; begin  end" }
+    end
+    parse_by "proc { begin; end }" do
+      it { is_expected.to unparsed "proc() {  }" }
+    end
+    parse_by "proc { begin; foo end }" do
+      it { is_expected.to unparsed "proc() { begin; foo; end }" }
+    end
+    parse_by "proc { begin; end; begin; end; foo; bar }" do
+      it { is_expected.to unparsed "proc() { begin; begin  end; foo; bar; end }" }
+    end
+    parse_by "piyo = hoge || begin; foo; bar; end" do
+      it { is_expected.to unparsed "(piyo = (hoge || begin\n  begin; foo; bar; end\nend))" }
+    end
+    context "by 2.6.0", ruby_version: "2.6.0"..."3.0.0" do
+      parse_by "aaa ||= begin; hoge foo end" do
+        it { is_expected.to unparsed "(aaa ||= begin; hoge(foo); end)" }
+      end
+      parse_by "aaa ||= begin; hoge foo end" do
+        it { is_expected.to unparsed "(aaa ||= begin; hoge(foo); end)" }
+      end
+    end
+    context "by 3.0.0", ruby_version: "3.0.0"... do
+      parse_by "aaa ||= begin; hoge foo end" do
+        it { is_expected.to unparsed "(aaa ||= begin\n  begin; hoge(foo); end\nend)" }
+      end
+      parse_by "aaa ||= begin; hoge foo end" do
+        it { is_expected.to unparsed "(aaa ||= begin\n  begin; hoge(foo); end\nend)" }
+      end
     end
   end
 
@@ -326,10 +374,10 @@ RSpec.describe Rensei::Unparser do
       end
     end
     parse_by "BEGIN { foo }" do
-      it { is_expected.to unparsed "BEGIN { foo }" }
+      it { is_expected.to unparsed "BEGIN { begin foo end }; " }
     end
     parse_by "BEGIN { foo; bar }" do
-      it { is_expected.to unparsed "BEGIN { begin foo; bar; end }" }
+      it { is_expected.to unparsed "BEGIN { begin begin foo; bar; end end }; " }
     end
   end
 
