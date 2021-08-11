@@ -1330,41 +1330,42 @@ module Rensei
           # Support proc { |**| }
           break { args: "**", body: unparse(body, opt) } if tbl == [nil] && info[:kwrest]
 
+          tbl_ = tbl.dup
           pre_args = []
           [info[:pre_num], info[:unparsed_pre_init]&.size || 0].max.times {
-            tbl.shift.then { |it|
+            tbl_.shift.then { |it|
               pre_args << (it ? it : info[:unparsed_pre_init].shift)
             }
           }
 
           # skip to opt args
           # e.g. a = 1, b = 2
-          tbl = tbl.drop(info[:unparsed_opt].count)
+          tbl_ = tbl_.drop(info[:unparsed_opt].count)
 
           # skip to rest args
           # e.g. *a
-          tbl = tbl.drop(info[:unparsed_rest].count)
+          tbl_ = tbl_.drop(info[:unparsed_rest].count)
 
           star = nil
-          tbl.take_while(&:nil?).tap { |nils|
+          tbl_.take_while(&:nil?).tap { |nils|
             if info[:unparsed_post_init].count < nils.count
               star = "*"
-              tbl = tbl.drop(1)
+              tbl_ = tbl_.drop(1)
             end
           }
 
           post_args = []
           [info[:post_num], info[:unparsed_post_init]&.size || 0].max.times {
-            tbl.shift.then { |it|
+            tbl_.shift.then { |it|
               post_args << (it ? it : info[:unparsed_post_init].shift)
             }
           }
 
           # skip to kw args
           # e.g. a:, b: c: 1
-          tbl = tbl.drop(info[:unparsed_kw].count.tap { |count| break count + 1 if count != 0 })
+          tbl_ = tbl_.drop(info[:unparsed_kw].count.tap { |count| break count + 1 if count != 0 })
 
-          if info[:unparsed_kwrest] == "**" && tbl.fetch(0, 1) != nil
+          if info[:unparsed_kwrest] == "**" && tbl_.fetch(0, 1) != nil
             kwrest = ""
           else
             kwrest = info[:unparsed_kwrest]

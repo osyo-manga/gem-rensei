@@ -10,6 +10,10 @@ module UnparserHelper
         let(:code) { code }
         it { expect { RubyVM::AbstractSyntaxTree.parse(code) }.not_to raise_error }
         it { expect(RubyVM::AbstractSyntaxTree.parse(Rensei::Unparser.unparse(node)).children.last.to_h).to eq node.to_h }
+        it {
+          node_h = node.to_h
+          expect { Rensei::Unparser.unparse(node_h) }.not_to change { node_h }
+        }
         instance_eval(&block) if block
       end
     end
