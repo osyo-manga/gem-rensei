@@ -437,11 +437,18 @@ module Rensei
       # example: x = nil; 1.times { x = foo }
       def NODE_DASGN(node, opt = {})
         node.children.then { |vid, value|
-          if value
-            "(#{vid} = #{unparse(value, opt)})"
-          else
-            # Support: `hoge(a = 1) { a, b = c }`
+          if value == :NODE_SPECIAL_REQUIRED_KEYWORD
+            "#{vid}:"
+          elsif opt.delete(:KW_ARG)
+            "#{vid}:#{value&.then { |it| " #{unparse(it, opt)}" }}"
+          elsif value.nil?
             "#{vid}"
+          elsif opt.delete(:expand_DASGN_CURR)
+            "#{vid} = #{unparse(value, opt)}"
+          elsif value.type == :ERRINFO
+            "=> #{vid}"
+          else
+            "(#{vid} = #{unparse(value, opt)})"
           end
         }
       end
